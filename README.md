@@ -2,7 +2,7 @@
 
 go-build-bash is a bash script that emulates `go build`.
 
-This purpose of this project is to help go-users learn how `go build` works.
+The purpose of this project is to help go users learn how `go build` works.
 
 # Usage
 
