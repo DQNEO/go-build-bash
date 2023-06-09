@@ -1,11 +1,21 @@
 #!/usr/local/bin/bash
+#
+# Usage: go-build.sh SOURCE_DIRECTORY
+#   or : go-build.sh
+#
 set -eu
 
 export GOOS=linux
 export GOARCH=amd64
+
+if [[ $# -eq 0 ]]; then
+  main_dir="."
+else
+  main_dir=$1
+fi
+
 WORK=/tmp/go-build/0608-2159
 OUT_FILE=hello
-SRC_DIR=$PWD
 GORT=`go env GOROOT`
 TOOL_DIR=$GORT/pkg/tool/darwin_amd64
 BLDID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
@@ -391,8 +401,8 @@ function go_build() {
 
   PKGS[main]=1
   id=2
-  local main_files=$(find_files_in_dir .)
-  FILE_NAMES_CACHE["."]="$main_files"
+  local main_files=$(find_files_in_dir $main_dir)
+  FILE_NAMES_CACHE[$main_dir]="$main_files"
   resolve_dep_tree $main_files
   mkdir -p $WORK
   dump_depend_tree > $WORK/depends.txt
@@ -411,8 +421,8 @@ function go_build() {
     build_pkg 1 $pkg ${FILE_NAMES_CACHE[$dir]}
   done
 
-  cd $SRC_DIR
-  build_pkg 0 "main" ${FILE_NAMES_CACHE["."]}
+  cd $main_dir
+  build_pkg 0 "main" ${FILE_NAMES_CACHE[$main_dir]}
   do_link
 }
 
