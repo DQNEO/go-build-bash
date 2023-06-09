@@ -14,7 +14,7 @@ else
   main_dir=$1
 fi
 
-WORK=/tmp/go-build/0608-2159
+WORK=/tmp/go-build-bash/$(date +%s)
 OUT_FILE=hello
 GORT=`go env GOROOT`
 TOOL_DIR=$GORT/pkg/tool/darwin_amd64
