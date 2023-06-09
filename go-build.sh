@@ -3,7 +3,7 @@
 # Usage: go-build.sh SOURCE_DIRECTORY
 #   or : go-build.sh
 #
-set -eu
+set -eux
 
 export GOOS=linux
 export GOARCH=amd64

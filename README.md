@@ -25,6 +25,13 @@ $ docker run --rm -v `pwd`:/mnt/ -w /mnt ubuntu ./hello
 hello world (go1.20.4)
 ```
 
+# TODO
+* [ ] Refactor code
+* [ ] Support more use cases (user's packages)
+* [ ] Apple silicon support
+* [ ] Speed up
+* [ ] Debug option
+
 # License
 MIT
 
