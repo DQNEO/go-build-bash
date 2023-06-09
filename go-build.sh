@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/usr/bin/env bash
 #
 # Usage: go-build.sh SOURCE_DIRECTORY
 #   or : go-build.sh
@@ -7,6 +7,21 @@ set -eu
 
 export GOOS=linux
 export GOARCH=amd64
+
+shopt -s expand_aliases
+
+
+if [[ $OSTYPE == "darwin"* ]]; then
+  HOST_GOOS=darwin
+  if ! which gfind >/dev/null || ! which gsed >/dev/null; then
+    "gfind and gsed commands are required. Please try 'brew install findutils gnu-sed'" >/dev/stderr
+    exit 1
+  fi
+  alias find=gfind
+  alias sed=gsed
+elif [[ $OSTYPE == "linux"* ]]; then
+  HOST_GOOS=linux
+fi
 
 if [[ $# -eq 0 ]]; then
   main_dir="."
@@ -17,9 +32,11 @@ fi
 WORK=/tmp/go-build-bash/$(date +%s)
 OUT_FILE=hello
 GORT=`go env GOROOT`
-TOOL_DIR=$GORT/pkg/tool/darwin_amd64
+GOVERSION=`go env GOVERSION`
+
+TOOL_DIR=$GORT/pkg/tool/${HOST_GOOS}_amd64
 BLDID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
-B="-buildid $BLDID -goversion go1.20.4"
+B="-buildid $BLDID -goversion $GOVERSION"
 
 declare -A PKGS=()
 declare -A DEPENDS=()
@@ -30,11 +47,15 @@ debug="false" # true or false
 function parseImportDecls() {
   set +e
   local file=$1
-  pcregrep -M --only-matching  --no-filename '^\s*import\s+\([^\)]+]*\)' $file\
+  cat $file \
+   | tr '\n' '~' \
+   | grep --only-matching --no-filename -E '~import\s*\([^\)]*\)' \
    | grep -E --only-matching '\"[^\"]+\"' \
    | tr -d '"'
 
-  pcregrep -M --only-matching  --no-filename '^\s*import.*"[^"]+"' $file\
+  cat $file \
+  | tr '\n' '~' \
+   | grep --only-matching  --no-filename -E '~import\s*"[^"]+"' \
    | grep -E --only-matching '\"[^\"]+\"' \
    | tr -d '"'
   set -e
@@ -77,13 +98,13 @@ function sort_pkgs() {
 
   while true
   do
-    leaves=$(cat $workfile | grep -e ': *$'| gsed -e 's/: *//g')
+    leaves=$(cat $workfile | grep -e ': *$'| sed -e 's/: *//g')
     if [[ -z $leaves ]]; then
       return
     fi
     for l in $leaves
     do
-      cat $workfile | grep -v -e "^$l:" | gsed -E "s#\"$l\"##g" > /tmp/tmp.txt
+      cat $workfile | grep -v -e "^$l:" | sed -E "s#\"$l\"##g" > /tmp/tmp.txt
       cp /tmp/tmp.txt $workfile
       echo $l
     done
@@ -256,7 +277,7 @@ function log() {
 
 function list_files_in_dir() {
   local dir=$1
-  gfind $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n" \
+  find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n" \
    | grep -v -E '_test.go' | sort
 }
 
@@ -285,11 +306,11 @@ function match_arch() {
          return 0
       else
       converted=$(echo $matched \
-      | gsed -E 's/(unix|linux|amd64)/@@@/g' \
-      | gsed -E 's/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/@@@/' | gsed -E 's/goexperiment\.\w+/false/g' \
-      | gsed -E 's/\w+/false/g' | gsed -E 's/@@@/true/g' \
-      | gsed -e 's/!true/false/g' | gsed -e 's/!false/true/g' \
-      | gsed -e 's/^true ||.*/true/' | gsed -e 's/^true &&//g' | gsed -e 's/^false ||//g' | gsed -e 's/^false &&.*/false/g' \
+      | sed -E 's/(unix|linux|amd64)/@@@/g' \
+      | sed -E 's/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/@@@/' | sed -E 's/goexperiment\.\w+/false/g' \
+      | sed -E 's/\w+/false/g' | sed -E 's/@@@/true/g' \
+      | sed -e 's/!true/false/g' | sed -e 's/!false/true/g' \
+      | sed -e 's/^true ||.*/true/' | sed -e 's/^true &&//g' | sed -e 's/^false ||//g' | sed -e 's/^false &&.*/false/g' \
        )
            log -n "=> '$converted'"
         if eval $converted ; then
