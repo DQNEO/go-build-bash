@@ -188,6 +188,7 @@ local otheropts=" $slang $sstd $sruntime $scomplete $asmopts "
 local pkgopts=$(get_package_opts $pkg)
 
 $TOOL_DIR/compile -c=4 -nolocalimports -pack $pkgopts $otheropts $gofiles
+log "$TOOL_DIR/compile -c=4 -nolocalimports -pack $pkgopts $otheropts $gofiles"
 if [[ -n $afiles ]]; then
   append_asm $pkg $afiles
 fi
@@ -266,7 +267,9 @@ EOF
 mkdir -p $wdir/exe/
 cd .
 $TOOL_DIR/link -o $wdir/exe/a.out -importcfg $wdir/importcfg.link -buildmode=exe -buildid=yekYyg_HZMgX517VPpiO/aHxht5d7JGm1qJULUhhT/ct0PU8-vieH10gtMxGeC/yekYyg_HZMgX517VPpiO -extld=cc $wdir/_pkg_.a
-$TOOL_DIR/buildid -w $wdir/exe/a.out # internal
+log "$TOOL_DIR/link -o $wdir/exe/a.out -importcfg $wdir/importcfg.link -buildmode=exe -buildid=yekYyg_HZMgX517VPpiO/aHxht5d7JGm1qJULUhhT/ct0PU8-vieH10gtMxGeC/yekYyg_HZMgX517VPpiO -extld=cc $wdir/_pkg_.a"
+
+$TOOL_DIR/buildid -w $wdir/exe/a.out
 mv $wdir/exe/a.out $OUT_FILE
 }
 
@@ -461,7 +464,6 @@ function go_build() {
   do
     dir=$(get_std_pkg_dir $pkg)
     files=${FILE_NAMES_CACHE[$dir]}
-    log "compiling $pkg in $dir -- " $files
     build_pkg 1 $pkg $files
   done
 
