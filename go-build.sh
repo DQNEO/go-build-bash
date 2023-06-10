@@ -338,6 +338,18 @@ function find_files_in_dir() {
   echo "$gofiles $asfiles"
 }
 
+# Convert absolute filenames to base names.
+# The purpose is for log's readability
+function abspaths_to_basenames() {
+  local paths="$@"
+  local files=""
+  for path in $paths
+  do
+    file=$(basename $path)
+    files="$files $file"
+  done
+  echo $files
+}
 function find_depends() {
   local pkg=$1
   if [ -v 'PKGS_DEPEND[$pkg]' ]; then
@@ -348,8 +360,8 @@ function find_depends() {
 
   log "$pkg:$pkgdir"
   local files=$(find_files_in_dir $pkgdir)
-
-  log "  files:" $files
+  local filenames=$(abspaths_to_basenames $files)
+  log "  files:" $filenames
   PKGS_FILES[$pkg]="$files"
   local pkgs=$(parse_imports $pkgdir $files)
   log "  imports:$pkgs"
