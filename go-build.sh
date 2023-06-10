@@ -186,7 +186,7 @@ fi
 local otheropts=" $slang $sstd $sruntime $scomplete $asmopts "
 local pkgopts=$(get_package_opts $pkg)
 local pkgdir=$GOROOT/src/$pkg
-log "compiling $pkg ($pkgdir) into $wdir/_pkg_.a"
+log "compiling $pkg: $pkgdir => $wdir/_pkg_.a"
 $TOOL_DIR/compile -c=4 -nolocalimports -pack $pkgopts $otheropts $gofiles
 if [[ -n $afiles ]]; then
   append_asm $pkg $afiles
@@ -448,9 +448,9 @@ function go_build() {
   dump_depend_tree > $WORK/depends.txt
   log ""
   log "#"
-  log "# Dependency tree has been made"
+  log "# Got dependency tree"
   log "#"
-  cat $WORK/depends.txt >/dev/stderr
+  cat $WORK/depends.txt | sed -e 's/:/ => /g' | tr -d '"' >/dev/stderr
   log ""
   log "#"
   log "# Sorting dependency ree"
