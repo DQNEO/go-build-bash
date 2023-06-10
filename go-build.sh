@@ -9,9 +9,16 @@ export GOARCH=amd64
 
 GOROOT=`go env GOROOT`
 GOVERSION=`go env GOVERSION`
+TOOL_DIR=$(env go GOTOOLDIR)
+
 WORK=/tmp/go-build-bash/$(date +%s)
 BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
 B="-buildid $BUILD_ID -goversion $GOVERSION"
+
+# Associative arrays to manage properties of each package
+declare -A PKGS=()
+declare -A DEPENDS=()
+declare -A FILE_NAMES_CACHE=()
 
 # Detect OS type
 if [[ $OSTYPE == "darwin"* ]]; then
@@ -27,8 +34,7 @@ elif [[ $OSTYPE == "linux"* ]]; then
   HOST_GOOS=linux
 fi
 
-TOOL_DIR=$GOROOT/pkg/tool/${HOST_GOOS}_amd64
-
+# Parse argv
 if [[ $# -eq 0 ]]; then
   main_dir="."
   OUT_FILE="go-build-bash"
@@ -37,10 +43,6 @@ else
   OUT_FILE=$1
   main_dir="."
 fi
-
-declare -A PKGS=()
-declare -A DEPENDS=()
-declare -A FILE_NAMES_CACHE=()
 
 debug="false" # true or false
 
