@@ -455,7 +455,7 @@ function go_build() {
 
   log ""
   log "#"
-  log "# Link packages"
+  log "# Link all packages"
   log "#"
   do_link
 }
