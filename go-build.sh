@@ -62,23 +62,6 @@ fi
 log "# main directory:" $main_dir
 log "# out file:" $OUT_FILE
 
-function parseImportDecls() {
-  set +e
-  local files="$@"
-  cat $files \
-   | tr '\n' '~' \
-   | grep --only-matching --no-filename -E '~import\s*\([^\)]*\)' \
-   | grep -E --only-matching '\"[^\"]+\"' \
-   | tr -d '"'
-
-  cat $files \
-  | tr '\n' '~' \
-   | grep --only-matching  --no-filename -E '~import\s*"[^"]+"' \
-   | grep -E --only-matching '\"[^\"]+\"' \
-   | tr -d '"'
-  set -e
-}
-
 function parse_imports() {
   local dir=$1
   shift;
@@ -90,7 +73,20 @@ function parse_imports() {
     absfiles="$absfiles $dir/$file"
   done
 
-  parseImportDecls "$absfiles" | sort | uniq | tr '\n' ' ' | awk '{$1=$1;print}'
+  local tmpfile=/tmp/tmp.txt
+  cat $absfiles | tr '\n' '~' > $tmpfile
+
+  set +e
+  (
+    cat $tmpfile \
+     | grep --only-matching --no-filename -E '~import\s*\([^\)]*\)'
+
+    cat $tmpfile \
+     | grep --only-matching  --no-filename -E '~import\s*"[^"]+"'
+  ) \
+   | grep -E --only-matching '\"[^\"]+\"' \
+   | grep -v '"unsafe"' | tr -d '"' | sort | uniq | tr '\n' ' ' | awk '{$1=$1;print}'
+  set -e
 }
 
 function dump_depend_tree() {
@@ -400,19 +396,7 @@ function find_depends() {
 
   log "  files:" $files
   FILE_NAMES_CACHE[$pkgdir]="$files"
-  local _pkgs=$(parse_imports $pkgdir $files )
-  local pkgs=""
-  for _pkg in $_pkgs
-  do
-    if [[ $_pkg != "unsafe" ]]; then
-      if [[ -z $pkgs ]]; then
-        pkgs=$_pkg
-      else
-        pkgs="$pkgs $_pkg"
-      fi
-    fi
-  done
-
+  local pkgs=$(parse_imports $pkgdir $files )
   log "  imports:$pkgs"
   DEPENDS[$pkg]=$pkgs
   for _pkg in $pkgs
@@ -444,19 +428,7 @@ function go_build() {
 
   log "  files:" $files
   FILE_NAMES_CACHE[$pkgdir]="$files"
-  local _pkgs=$(parse_imports $pkgdir $files )
-  local pkgs=""
-  for _pkg in $_pkgs
-  do
-    if [[ $_pkg != "unsafe" ]]; then
-      if [[ -z $pkgs ]]; then
-        pkgs=$_pkg
-      else
-        pkgs="$pkgs $_pkg"
-      fi
-    fi
-  done
-
+  local pkgs=$(parse_imports $pkgdir $files )
   log "  imports:$pkgs"
   DEPENDS[$pkg]=$pkgs
 
