@@ -232,7 +232,6 @@ do
 done
 
 $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
-
 }
 
 function get_package_opts() {
@@ -380,7 +379,7 @@ function find_depends() {
     return
   fi
   local dir=$(get_std_pkg_dir $pkg)
-  log "$pkg => $dir"
+  log "$pkg:$dir"
   local files=$(find_files_in_dir $dir)
   log "  " $files
   FILE_NAMES_CACHE[$dir]="$files"
