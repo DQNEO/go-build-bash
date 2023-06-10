@@ -428,13 +428,20 @@ function go_build() {
 
   PKGS[main]=1
   id=2
+
+  log "# Finding files"
   local main_files=$(find_files_in_dir $main_dir)
   FILE_NAMES_CACHE[$main_dir]="$main_files"
   resolve_dep_tree $main_files
   mkdir -p $WORK
+
   dump_depend_tree > $WORK/depends.txt
+  log "# Dependency tree has been made"
+  cat $WORK/depends.txt >/dev/stderr
+  log "# Sorting dependency ree"
   sort_pkgs  $WORK/depends.txt > $WORK/sorted.txt
-  
+  cat $WORK/sorted.txt >/dev/stderr
+
   std_pkgs=`cat $WORK/sorted.txt | grep -v -e '^main$'`
   for pkg in $std_pkgs
   do
@@ -445,11 +452,15 @@ function go_build() {
   for pkg in $std_pkgs
   do
     dir=$(get_std_pkg_dir $pkg)
+    log "# Compiling $pkg in $dir"
     build_pkg 1 $pkg ${FILE_NAMES_CACHE[$dir]}
   done
 
+  log "# Compiling the main package"
   cd $main_dir
   build_pkg 0 "main" ${FILE_NAMES_CACHE[$main_dir]}
+
+  log "# Link packages"
   do_link
 }
 
