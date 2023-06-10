@@ -370,18 +370,7 @@ function find_files_in_dir() {
     fi
   done
 
-  for s in $gofiles
-  do
-    echo -n " $s"
-  done
-
-  for s in $sfiles
-  do
-    echo -n " $s"
-  done
-
-  echo ''
-
+  echo "$gofiles $sfiles"
 }
 
 function find_depends() {
