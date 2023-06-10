@@ -15,7 +15,6 @@ TOOL_DIR=$(go env GOTOOLDIR)
 
 WORK=/tmp/go-build-bash/$(date +%s)
 BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
-B="-buildid $BUILD_ID -goversion $GOVERSION"
 
 # Associative arrays to manage properties of each package
 declare -A PKGS=()
@@ -258,7 +257,8 @@ function get_package_opts() {
     -p $pkg \
     -o $wdir/_pkg_.a \
     -trimpath \"$wdir=>\" \
-    $B \
+    -buildid $BUILD_ID \
+    -goversion $GOVERSION \
     -importcfg $wdir/importcfg \
   "
   echo $pkgopts
