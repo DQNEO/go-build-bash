@@ -306,7 +306,7 @@ function exclude_arch() {
 function get_build_tag() {
   local fullpath=$1
   set +e
-  matched=`grep -m 1 --only-matching -E '^//go:build .+$' $fullpath`
+  matched=$(grep -m 1 --only-matching -E '^//go:build .+$' $fullpath)
   set -e
   matched=${matched##"//go:build "}
   echo $matched
@@ -466,7 +466,7 @@ function go_build() {
   sort_pkgs  $WORK/depends.txt > $WORK/sorted.txt
   cat $WORK/sorted.txt >/dev/stderr
 
-  std_pkgs=`cat $WORK/sorted.txt | grep -v -e '^main$'`
+  std_pkgs=$(cat $WORK/sorted.txt | grep -v -e '^main$')
   for pkg in $std_pkgs
   do
     PKGS[$pkg]=$id
