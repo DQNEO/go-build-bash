@@ -391,12 +391,58 @@ function find_depends() {
   if [ -v 'DEPENDS[$pkg]' ]; then
     return
   fi
-  local dir=$GOROOT/src/$pkg
-  log "$pkg:$dir"
-  local files=$(find_files_in_dir $dir)
+
+  local pkgdir=$GOROOT/src/$pkg
+  log "$pkg:$pkgdir"
+  local files=$(find_files_in_dir $pkgdir)
+
   log "  files:" $files
-  FILE_NAMES_CACHE[$dir]="$files"
-  local _pkgs=$(parse_imports $dir $files )
+  FILE_NAMES_CACHE[$pkgdir]="$files"
+  local _pkgs=$(parse_imports $pkgdir $files )
+  local pkgs=""
+  for _pkg in $_pkgs
+  do
+    if [[ $_pkg != "unsafe" ]]; then
+      if [[ -z $pkgs ]]; then
+        pkgs=$_pkg
+      else
+        pkgs="$pkgs $_pkg"
+      fi
+    fi
+  done
+
+  log "  imports:$pkgs"
+  DEPENDS[$pkg]=$pkgs
+  for _pkg in $pkgs
+  do
+    find_depends $_pkg
+  done
+}
+
+function get_std_pkg_dir() {
+  local pkg=$1
+  echo $GOROOT/src/$pkg
+}
+
+# main procedure
+function go_build() {
+  rm -f $OUT_FILE
+
+  PKGS[main]=1
+  id=2
+
+  log ""
+  log "#"
+  log "# Finding files"
+  log "#"
+  local pkg="main"
+  local pkgdir=$main_dir
+  log "$pkg:$pkgdir"
+  local files=$(find_files_in_dir $pkgdir)
+
+  log "  files:" $files
+  FILE_NAMES_CACHE[$pkgdir]="$files"
+  local _pkgs=$(parse_imports $pkgdir $files )
   local pkgs=""
   for _pkg in $_pkgs
   do
@@ -416,39 +462,7 @@ function find_depends() {
   do
     find_depends $_pkg
   done
-}
 
-function resolve_dep_tree() {
-    local files="$@" # main files
-    local pkgs=$( parse_imports . $files )
-    DEPENDS[main]=$pkgs
-
-    for pkg in $pkgs
-    do
-      find_depends $pkg
-    done
-}
-
-function get_std_pkg_dir() {
-  local pkg=$1
-  echo $GOROOT/src/$pkg
-}
-
-# main procedure
-function go_build() {
-  rm -f $OUT_FILE
-
-  PKGS[main]=1
-  id=2
-
-  log ""
-  log "#"
-  log "# Finding files"
-  log "#"
-  local main_files=$(find_files_in_dir $main_dir)
-  log "$main_dir => $main_files"
-  FILE_NAMES_CACHE[$main_dir]="$main_files"
-  resolve_dep_tree $main_files
   mkdir -p $WORK
 
   dump_depend_tree > $WORK/depends.txt
