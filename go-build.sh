@@ -7,7 +7,7 @@ set -eux
 
 export GOOS=linux
 export GOARCH=amd64
-readony GORT=`go env GOROOT`
+readony GOROOT=`go env GOROOT`
 readony GOVERSION=`go env GOVERSION`
 readony WORK=/tmp/go-build-bash/$(date +%s)
 readony BLDID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
@@ -29,7 +29,7 @@ fi
 
 OUT_FILE=hello
 
-TOOL_DIR=$GORT/pkg/tool/${HOST_GOOS}_amd64
+TOOL_DIR=$GOROOT/pkg/tool/${HOST_GOOS}_amd64
 
 if [[ $# -eq 0 ]]; then
   main_dir="."
@@ -123,7 +123,7 @@ for f in $filenames
 do
   local file
   if [[ $std == "1" ]]; then
-    file=$GORT/src/$pkg/$f
+    file=$GOROOT/src/$pkg/$f
   else
     file=$f
   fi
@@ -209,7 +209,7 @@ shift
 files="$@"
 wdir=$WORK/${PKGS[$pkg]}
 
-$TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GORT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1 -gensymabis -o $wdir/symabis  $files
+$TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1 -gensymabis -o $wdir/symabis  $files
 }
 
 function append_asm() {
@@ -224,7 +224,7 @@ do
   local basename=${f##*/}
   local baseo=${basename%.s}.o
   local ofile=$wdir/$baseo
-  $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GORT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1  -o $ofile $f
+  $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1  -o $ofile $f
   ofiles="$ofiles $ofile"
 done
 
@@ -412,7 +412,7 @@ function resolve_dep_tree() {
 
 function get_std_pkg_dir() {
   local pkg=$1
-  echo $GORT/src/$pkg
+  echo $GOROOT/src/$pkg
 }
 
 # main procedure
