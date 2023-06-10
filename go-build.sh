@@ -7,36 +7,35 @@ set -eux
 
 export GOOS=linux
 export GOARCH=amd64
+readony GORT=`go env GOROOT`
+readony GOVERSION=`go env GOVERSION`
+readony WORK=/tmp/go-build-bash/$(date +%s)
+readony BLDID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
+readony B="-buildid $BLDID -goversion $GOVERSION"
 
-shopt -s expand_aliases
-
-
+# Detect OS type
 if [[ $OSTYPE == "darwin"* ]]; then
   HOST_GOOS=darwin
   if ! which gfind >/dev/null || ! which gsed >/dev/null; then
     "gfind and gsed commands are required. Please try 'brew install findutils gnu-sed'" >/dev/stderr
     exit 1
   fi
+  shopt -s expand_aliases
   alias find=gfind
   alias sed=gsed
 elif [[ $OSTYPE == "linux"* ]]; then
   HOST_GOOS=linux
 fi
 
+OUT_FILE=hello
+
+TOOL_DIR=$GORT/pkg/tool/${HOST_GOOS}_amd64
+
 if [[ $# -eq 0 ]]; then
   main_dir="."
 else
   main_dir=$1
 fi
-
-WORK=/tmp/go-build-bash/$(date +%s)
-OUT_FILE=hello
-GORT=`go env GOROOT`
-GOVERSION=`go env GOVERSION`
-
-TOOL_DIR=$GORT/pkg/tool/${HOST_GOOS}_amd64
-BLDID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
-B="-buildid $BLDID -goversion $GOVERSION"
 
 declare -A PKGS=()
 declare -A DEPENDS=()
