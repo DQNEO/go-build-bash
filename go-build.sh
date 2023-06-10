@@ -64,10 +64,9 @@ function parseImportDecls() {
 }
 
 function parse_imports() {
-  declare dir=$1
+  local dir=$1
   shift;
-
-  declare readonly files="$@"
+  local files="$@"
   {
     for file in $files
     do
