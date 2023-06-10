@@ -200,7 +200,15 @@ if [ "$pkg" = "main" ]; then
 fi
 
 local otheropts=" $slang $sstd $sruntime $scomplete $asmopts "
-local pkgopts=$(get_package_opts $pkg)
+local pkgopts=" \
+  -p $pkg \
+  -o $wdir/_pkg_.a \
+  -trimpath \"$wdir=>\" \
+  -buildid $BUILD_ID \
+  -goversion $GOVERSION \
+  -importcfg $wdir/importcfg \
+"
+
 local pkgdir=$GOROOT/src/$pkg
 log "compiling $pkg: $pkgdir => $wdir/_pkg_.a"
 $TOOL_DIR/compile -c=4 -nolocalimports -pack $pkgopts $otheropts $gofiles
@@ -248,20 +256,6 @@ do
 done
 
 $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
-}
-
-function get_package_opts() {
-  pkg=$1
-  wdir=$WORK/${PKGS[$pkg]}
-  local pkgopts=" \
-    -p $pkg \
-    -o $wdir/_pkg_.a \
-    -trimpath \"$wdir=>\" \
-    -buildid $BUILD_ID \
-    -goversion $GOVERSION \
-    -importcfg $wdir/importcfg \
-  "
-  echo $pkgopts
 }
 
 ## Final output
