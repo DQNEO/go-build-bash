@@ -330,32 +330,24 @@ function find_files_in_dir() {
   local dir=$1
   local files=$(list_files_in_dir $dir | exclude_arch)
   local gofiles=""
-  local sfiles=""
-
-  local buildfiles=""
+  local asfiles=""
 
   for f in $files
   do
     local fullpath="$dir/$f"
     local tag=$(get_build_tag $fullpath)
     if match_arch "$tag" ; then
-         buildfiles="$buildfiles $fullpath"
+      if [[ $fullpath == *.go ]] ; then
+        gofiles="$gofiles $fullpath"
+      elif [[ $fullpath == *.s ]] ; then
+        asfiles="$asfiles $fullpath"
+      else
+        log "something wrong happened"
+      fi
     fi
   done
 
-  for f in $buildfiles
-  do
-    if [[ $f == *.go ]] ; then
-      gofiles="$gofiles $f"
-    elif [[ $f == *.s ]] ; then
-      sfiles="$sfiles $f"
-    else
-      log ERROR
-      exit 1
-    fi
-  done
-
-  echo "$gofiles $sfiles"
+  echo "$gofiles $asfiles"
 }
 
 function find_depends() {
