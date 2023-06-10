@@ -270,6 +270,13 @@ log "$TOOL_DIR/link -o $wdir/exe/a.out -importcfg $wdir/importcfg.link -buildmod
 
 $TOOL_DIR/buildid -w $wdir/exe/a.out
 mv $wdir/exe/a.out $OUT_FILE
+
+log ""
+log "#"
+log "# Move the final binary executable file"
+log "#"
+echo mv $wdir/exe/a.out $OUT_FILE
+
 }
 
 function log() {
