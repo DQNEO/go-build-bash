@@ -284,7 +284,7 @@ mv $wdir/exe/a.out $OUT_FILE
 
 log ""
 log "#"
-log "# Move the final binary executable file"
+log "# Move the binary executable file"
 log "#"
 echo mv $wdir/exe/a.out $OUT_FILE
 
