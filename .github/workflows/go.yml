@@ -25,5 +25,5 @@ jobs:
       run: make
 
     - name: test
-      run: make test
+      run: make test-on-linux
 
