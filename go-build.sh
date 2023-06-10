@@ -22,6 +22,15 @@ declare -A PKGS=()
 declare -A DEPENDS=()
 declare -A FILE_NAMES_CACHE=()
 
+debug="true" # true or false
+
+function log() {
+  if eval $debug ; then
+    echo "$@" >/dev/stderr
+  fi
+}
+
+
 # Detect OS type
 if [[ $OSTYPE == "darwin"* ]]; then
   HOST_GOOS=darwin
@@ -37,22 +46,22 @@ elif [[ $OSTYPE == "linux"* ]]; then
 fi
 
 # Parse argv
-if [[ $# -eq 0 ]]; then
-  main_dir="."
-  OUT_FILE=$DEFAULT_OUT_FILE
-else
+main_dir="."
+OUT_FILE=$DEFAULT_OUT_FILE
+if [[ $# -ge 1 ]]; then
   if [[ $1 == "-o" ]]; then
     shift
     OUT_FILE=$1
     shift
-  else
-    OUT_FILE=$DEFAULT_OUT_FILE
   fi
 
-  main_dir=$1
+  if [[ $# -ge 1 ]]; then
+    main_dir=$1
+  fi
 fi
 
-debug="true" # true or false
+log "# main directory:" $main_dir
+log "# out file:" $OUT_FILE
 
 function parseImportDecls() {
   set +e
@@ -285,12 +294,6 @@ log "# Move the final binary executable file"
 log "#"
 echo mv $wdir/exe/a.out $OUT_FILE
 
-}
-
-function log() {
-  if eval $debug ; then
-    echo "$@" >/dev/stderr
-  fi
 }
 
 function list_files_in_dir() {
