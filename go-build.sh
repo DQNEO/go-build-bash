@@ -17,9 +17,9 @@ WORK=/tmp/go-build-bash/$(date +%s)
 BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
 
 # Associative arrays to manage properties of each package
-declare -A PKGS=()
-declare -A DEPENDS=()
-declare -A FILE_NAMES_CACHE=()
+declare -A PKGS_ID=()
+declare -A PKGS_DEPEND=()
+declare -A PKGS_FILES=()
 
 debug="true" # true or false
 
@@ -84,10 +84,10 @@ function parse_imports() {
 }
 
 function dump_depend_tree() {
-  for p in "${!DEPENDS[@]}"
+  for p in "${!PKGS_DEPEND[@]}"
   do
     echo -n "$p:"
-    for v in ${DEPENDS[$p]}
+    for v in ${PKGS_DEPEND[$p]}
     do
       for w in $v
       do
@@ -142,7 +142,7 @@ do
   fi
 done
 
-local wdir=$WORK/${PKGS[$pkg]}
+local wdir=$WORK/${PKGS_ID[$pkg]}
 mkdir -p $wdir/
 make_importcfg $pkg
 
@@ -207,12 +207,12 @@ $TOOL_DIR/buildid -w $wdir/_pkg_.a # internal
 
 function make_importcfg() {
 pkg=$1
-wdir=$WORK/${PKGS[$pkg]}
+wdir=$WORK/${PKGS_ID[$pkg]}
 (
 echo '# import config'
-for f in  ${DEPENDS[$pkg]}
+for f in  ${PKGS_DEPEND[$pkg]}
 do
-  echo "packagefile $f=$WORK/${PKGS[$f]}/_pkg_.a"
+  echo "packagefile $f=$WORK/${PKGS_ID[$f]}/_pkg_.a"
 done
 ) >$wdir/importcfg
 }
@@ -221,7 +221,7 @@ function gen_symabis() {
 pkg=$1
 shift
 files="$@"
-wdir=$WORK/${PKGS[$pkg]}
+wdir=$WORK/${PKGS_ID[$pkg]}
 
 $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1 -gensymabis -o $wdir/symabis  $files
 }
@@ -231,7 +231,7 @@ pkg=$1
 shift
 files="$@"
 
-wdir=$WORK/${PKGS[$pkg]}
+wdir=$WORK/${PKGS_ID[$pkg]}
 local ofiles=""
 for f in $files
 do
@@ -248,11 +248,11 @@ $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
 ## Final output
 function do_link() {
 local pkg=main
-local wdir=$WORK/${PKGS[$pkg]}
+local wdir=$WORK/${PKGS_ID[$pkg]}
 local pkgsfiles=""
-for p in "${!PKGS[@]}"
+for p in "${!PKGS_ID[@]}"
 do
-  pkgsfiles="${pkgsfiles}packagefile ${p}=$WORK/${PKGS[$p]}/_pkg_.a
+  pkgsfiles="${pkgsfiles}packagefile ${p}=$WORK/${PKGS_ID[$p]}/_pkg_.a
 "
 done
 cat >$wdir/importcfg.link << EOF # internal
@@ -364,19 +364,20 @@ function find_files_in_dir() {
 
 function find_depends() {
   local pkg=$1
-  if [ -v 'DEPENDS[$pkg]' ]; then
+  if [ -v 'PKGS_DEPEND[$pkg]' ]; then
     return
   fi
 
   local pkgdir=$GOROOT/src/$pkg
+
   log "$pkg:$pkgdir"
   local files=$(find_files_in_dir $pkgdir)
 
   log "  files:" $files
-  FILE_NAMES_CACHE[$pkgdir]="$files"
+  PKGS_FILES[$pkg]="$files"
   local pkgs=$(parse_imports $pkgdir $files )
   log "  imports:$pkgs"
-  DEPENDS[$pkg]=$pkgs
+  PKGS_DEPEND[$pkg]=$pkgs
   for _pkg in $pkgs
   do
     find_depends $_pkg
@@ -392,7 +393,7 @@ function get_std_pkg_dir() {
 function go_build() {
   rm -f $OUT_FILE
 
-  PKGS[main]=1
+  PKGS_ID[main]=1
   id=2
 
   log ""
@@ -405,10 +406,10 @@ function go_build() {
   local files=$(find_files_in_dir $pkgdir)
 
   log "  files:" $files
-  FILE_NAMES_CACHE[$pkgdir]="$files"
+  PKGS_FILES[$pkg]="$files"
   local pkgs=$(parse_imports $pkgdir $files )
   log "  imports:$pkgs"
-  DEPENDS[$pkg]=$pkgs
+  PKGS_DEPEND[$pkg]=$pkgs
 
   for _pkg in $pkgs
   do
@@ -433,7 +434,7 @@ function go_build() {
   std_pkgs=$(cat $WORK/sorted.txt | grep -v -e '^main$')
   for pkg in $std_pkgs
   do
-    PKGS[$pkg]=$id
+    PKGS_ID[$pkg]=$id
     id=$((id + 1))
   done
 
@@ -444,7 +445,7 @@ function go_build() {
   for pkg in $std_pkgs
   do
     dir=$GOROOT/src/$pkg
-    files=${FILE_NAMES_CACHE[$dir]}
+    files=${PKGS_FILES[$pkg]}
     build_pkg 1 $pkg $files
   done
 
@@ -453,7 +454,7 @@ function go_build() {
   log "# Compiling the main package"
   log "#"
   cd $main_dir
-  build_pkg 0 "main" ${FILE_NAMES_CACHE[$main_dir]}
+  build_pkg 0 "main" ${PKGS_FILES["main"]}
 
   log ""
   log "#"
