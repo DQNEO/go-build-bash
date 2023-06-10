@@ -7,8 +7,10 @@ set -eu
 export GOOS=linux
 export GOARCH=amd64
 
-GOROOT=`go env GOROOT`
-GOVERSION=`go env GOVERSION`
+DEFAULT_OUT_FILE="go-build-bash"
+
+GOROOT=$(go env GOROOT)
+GOVERSION=$(go env GOVERSION)
 TOOL_DIR=$(go env GOTOOLDIR)
 
 WORK=/tmp/go-build-bash/$(date +%s)
@@ -34,7 +36,6 @@ elif [[ $OSTYPE == "linux"* ]]; then
   HOST_GOOS=linux
 fi
 
-DEFAULT_OUT_FILE="go-build-bash"
 # Parse argv
 if [[ $# -eq 0 ]]; then
   main_dir="."
