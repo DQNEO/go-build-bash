@@ -9,7 +9,7 @@ export GOARCH=amd64
 
 GOROOT=`go env GOROOT`
 GOVERSION=`go env GOVERSION`
-TOOL_DIR=$(env go GOTOOLDIR)
+TOOL_DIR=$(go env GOTOOLDIR)
 
 WORK=/tmp/go-build-bash/$(date +%s)
 BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
