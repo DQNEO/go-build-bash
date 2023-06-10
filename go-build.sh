@@ -34,14 +34,21 @@ elif [[ $OSTYPE == "linux"* ]]; then
   HOST_GOOS=linux
 fi
 
+DEFAULT_OUT_FILE="go-build-bash"
 # Parse argv
 if [[ $# -eq 0 ]]; then
   main_dir="."
-  OUT_FILE="go-build-bash"
+  OUT_FILE=$DEFAULT_OUT_FILE
 else
-  shift
-  OUT_FILE=$1
-  main_dir="."
+  if [[ $1 == "-o" ]]; then
+    shift
+    OUT_FILE=$1
+    shift
+  else
+    OUT_FILE=$DEFAULT_OUT_FILE
+  fi
+
+  main_dir=$1
 fi
 
 debug="true" # true or false
@@ -441,6 +448,7 @@ function go_build() {
   log "# Finding files"
   log "#"
   local main_files=$(find_files_in_dir $main_dir)
+  log "$main_dir => $main_files"
   FILE_NAMES_CACHE[$main_dir]="$main_files"
   resolve_dep_tree $main_files
   mkdir -p $WORK
