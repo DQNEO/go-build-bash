@@ -339,11 +339,7 @@ function find_files_in_dir() {
     local fullpath="$dir/$f"
     local tag=$(get_build_tag $fullpath)
     if match_arch "$tag" ; then
-         # log " => ok"
          buildfiles="$buildfiles $fullpath"
-    else
-        :
-         # log " => ng"
     fi
   done
 
