@@ -381,9 +381,6 @@ function get_std_pkg_dir() {
 function go_build() {
   rm -f $OUT_FILE
 
-  PKGS_ID[main]=1
-  id=2
-
   log ""
   log "#"
   log "# Finding files"
@@ -420,6 +417,10 @@ function go_build() {
   cat $WORK/sorted.txt >/dev/stderr
 
   std_pkgs=$(cat $WORK/sorted.txt | grep -v -e '^main$')
+
+  # Assign package ID number
+  PKGS_ID[main]=1
+  local id=2
   for pkg in $std_pkgs
   do
     PKGS_ID[$pkg]=$id
