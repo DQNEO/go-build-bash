@@ -415,11 +415,10 @@ function go_build() {
   std_pkgs=$(cat $WORK/sorted.txt | grep -v -e '^main$')
 
   # Assign package ID number
-  PKGS_ID[main]=1
-  local id=2
-  for pkg in $std_pkgs
+  local id=1
+  for pkg in "main" $std_pkgs
   do
-    PKGS_ID[$pkg]=$id
+    PKGS_ID[$pkg]=$(printf "%03d" $id)
     id=$((id + 1))
   done
 
