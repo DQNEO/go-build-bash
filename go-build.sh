@@ -44,7 +44,7 @@ else
   main_dir="."
 fi
 
-debug="false" # true or false
+debug="true" # true or false
 
 function parseImportDecls() {
   set +e
@@ -299,7 +299,7 @@ function get_build_tag() {
 
 function match_arch() {
   local matched=$1
-      log -n "[$f: '$matched' ]"
+      #log -n "[$f: '$matched' ]"
       if [[ $matched = "ignore" ]]; then
        # ignore
        return 1
@@ -314,7 +314,8 @@ function match_arch() {
       | sed -e 's/!true/false/g' | sed -e 's/!false/true/g' \
       | sed -e 's/^true ||.*/true/' | sed -e 's/^true &&//g' | sed -e 's/^false ||//g' | sed -e 's/^false &&.*/false/g' \
        )
-           log -n "=> '$converted'"
+          :
+           #log -n "=> '$converted'"
         if eval $converted ; then
            # do build
            return 0
@@ -339,10 +340,11 @@ function find_files_in_dir() {
     local fullpath="$dir/$f"
     local tag=$(get_build_tag $fullpath)
     if match_arch "$tag" ; then
-         log " => ok"
+         # log " => ok"
          buildfiles="$buildfiles $f"
     else
-         log " => ng"
+        :
+         # log " => ng"
     fi
   done
 
@@ -378,7 +380,9 @@ function find_depends() {
     return
   fi
   local dir=$(get_std_pkg_dir $pkg)
+  log "$pkg => $dir"
   local files=$(find_files_in_dir $dir)
+  log "    " $files
   FILE_NAMES_CACHE[$dir]="$files"
   local _pkgs=$(parse_imports $dir $files )
   local pkgs=""
