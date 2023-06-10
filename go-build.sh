@@ -382,7 +382,7 @@ function find_depends() {
   local dir=$(get_std_pkg_dir $pkg)
   log "$pkg => $dir"
   local files=$(find_files_in_dir $dir)
-  log "    " $files
+  log "  " $files
   FILE_NAMES_CACHE[$dir]="$files"
   local _pkgs=$(parse_imports $dir $files )
   local pkgs=""
