@@ -67,7 +67,7 @@ function parse_imports() {
   shift;
   local absfiles="$@"
 
-  local tmpfile=/tmp/tmp.txt
+  local tmpfile=$WORK/_tmp_parse_imports.txt
   cat $absfiles | tr '\n' '~' > $tmpfile
 
   set +e
@@ -101,7 +101,8 @@ function dump_depend_tree() {
 # Sort packages topologically
 function sort_pkgs() {
   infile=$1
-  local workfile=/tmp/work.txt
+  local workfile=$WORK/_tmp_sort_pkgs_work.txt
+  local tmpfile=$WORK/_tmp_sort_pkgs_tmp.txt
 
   cp $infile $workfile
 
@@ -113,8 +114,8 @@ function sort_pkgs() {
     fi
     for l in $leaves
     do
-      cat $workfile | grep -v -e "^$l:" | sed -E "s#\"$l\"##g" > /tmp/tmp.txt
-      cp /tmp/tmp.txt $workfile
+      cat $workfile | grep -v -e "^$l:" | sed -E "s#\"$l\"##g" > $tmpfile
+      mv -f $tmpfile $workfile
       echo $l
     done
   done
@@ -376,6 +377,7 @@ function get_std_pkg_dir() {
 # main procedure
 function go_build() {
   rm -f $OUT_FILE
+  mkdir -p $WORK
 
   log ""
   log "#"
@@ -397,7 +399,6 @@ function go_build() {
     find_depends $_pkg
   done
 
-  mkdir -p $WORK
 
   dump_depend_tree > $WORK/depends.txt
   log ""
