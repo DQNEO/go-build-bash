@@ -3,7 +3,7 @@ hello:
 
 # test on a non-linux host machine
 test: hello
-	docker run --rm -v `pwd`:/mnt/ -w /mnt ubuntu ./$<
+	docker run --rm -v `pwd`:/mnt/ -w /mnt busybox ./$<
 
 # test on a linux host machine
 test-on-linux: hello
