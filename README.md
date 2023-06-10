@@ -20,7 +20,7 @@ The purpose of this project is to help go users learn how `go build` works.
 
 ```
 $ ./go-build.sh -o hello
-$ docker run --rm -v `pwd`:/mnt/ -w /mnt ubuntu ./hello
+$ docker run --rm -v `pwd`:/mnt/ -w /mnt busybox ./hello
 
 hello world (go1.20.4)
 ```
