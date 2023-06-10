@@ -29,7 +29,6 @@ hello world (go1.20.4)
 * [ ] Refactor code
 * [ ] Support more use cases (user's packages)
 * [ ] Apple silicon support
-* [ ] Speed up
 * [ ] Debug option
 
 # License
