@@ -277,14 +277,11 @@ echo mv $wdir/exe/a.out $OUT_FILE
 
 }
 
-function list_files_in_dir() {
+function list_maching_files_in_dir() {
   local dir=$1
   find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n" \
-   | grep -v -E '_test.go' | sort
-}
-
-function exclude_arch() {
-  grep -v -E '_(android|ios|illumos|hurd|zos|darwin|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris)(\.|_)' \
+   | grep -v -E '_test.go' \
+   | grep -v -E '_(android|ios|illumos|hurd|zos|darwin|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris)(\.|_)' \
    | grep -v -E '_(386|arm|armbe|arm64|arm64be|loong64|mips|mipsle|mips64.*|ppc64|ppc64le|riscv64|ppc|riscv|s390|s390x|sparc.*|wasm)\.(go|s)'
 }
 
@@ -299,7 +296,6 @@ function get_build_tag() {
 
 function match_arch() {
   local matched=$1
-      #log -n "[$f: '$matched' ]"
       if [[ $matched = "ignore" ]]; then
        # ignore
        return 1
@@ -315,7 +311,6 @@ function match_arch() {
       | sed -e 's/^true ||.*/true/' | sed -e 's/^true &&//g' | sed -e 's/^false ||//g' | sed -e 's/^false &&.*/false/g' \
        )
           :
-           #log -n "=> '$converted'"
         if eval $converted ; then
            # do build
            return 0
@@ -328,7 +323,7 @@ function match_arch() {
 
 function find_files_in_dir() {
   local dir=$1
-  local files=$(list_files_in_dir $dir | exclude_arch)
+  local files=$(list_maching_files_in_dir $dir)
   local gofiles=""
   local asfiles=""
 
@@ -343,6 +338,7 @@ function find_files_in_dir() {
         asfiles="$asfiles $fullpath"
       else
         log "something wrong happened"
+        exit 1
       fi
     fi
   done
