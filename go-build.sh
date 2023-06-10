@@ -186,9 +186,9 @@ fi
 
 local otheropts=" $slang $sstd $sruntime $scomplete $asmopts "
 local pkgopts=$(get_package_opts $pkg)
-
+local pkgdir=$GOROOT/src/$pkg
+log "compiling $pkg ($pkgdir) into $wdir/_pkg_.a"
 $TOOL_DIR/compile -c=4 -nolocalimports -pack $pkgopts $otheropts $gofiles
-log "$TOOL_DIR/compile -c=4 -nolocalimports -pack $pkgopts $otheropts $gofiles"
 if [[ -n $afiles ]]; then
   append_asm $pkg $afiles
 fi
@@ -330,7 +330,6 @@ function match_arch() {
 
 function find_files_in_dir() {
   local dir=$1
-
   local files=$(list_files_in_dir $dir | exclude_arch)
   local gofiles=""
   local sfiles=""
@@ -381,10 +380,10 @@ function find_depends() {
   if [ -v 'DEPENDS[$pkg]' ]; then
     return
   fi
-  local dir=$(get_std_pkg_dir $pkg)
+  local dir=$GOROOT/src/$pkg
   log "$pkg:$dir"
   local files=$(find_files_in_dir $dir)
-  log "  " $files
+  log "  files:" $files
   FILE_NAMES_CACHE[$dir]="$files"
   local _pkgs=$(parse_imports $dir $files )
   local pkgs=""
@@ -399,7 +398,7 @@ function find_depends() {
     fi
   done
 
-  #echo "[$pkg]=\"$pkgs\""
+  log "  imports:$pkgs"
   DEPENDS[$pkg]=$pkgs
 
   for _pkg in $pkgs
@@ -431,6 +430,7 @@ function go_build() {
   PKGS[main]=1
   id=2
 
+  log ""
   log "#"
   log "# Finding files"
   log "#"
@@ -440,10 +440,12 @@ function go_build() {
   mkdir -p $WORK
 
   dump_depend_tree > $WORK/depends.txt
+  log ""
   log "#"
   log "# Dependency tree has been made"
   log "#"
   cat $WORK/depends.txt >/dev/stderr
+  log ""
   log "#"
   log "# Sorting dependency ree"
   log "#"
@@ -457,22 +459,25 @@ function go_build() {
     id=$((id + 1))
   done
 
+  log ""
   log "#"
   log "# Compiling packages"
   log "#"
   for pkg in $std_pkgs
   do
-    dir=$(get_std_pkg_dir $pkg)
+    dir=$GOROOT/src/$pkg
     files=${FILE_NAMES_CACHE[$dir]}
     build_pkg 1 $pkg $files
   done
 
+  log ""
   log "#"
   log "# Compiling the main package"
   log "#"
   cd $main_dir
   build_pkg 0 "main" ${FILE_NAMES_CACHE[$main_dir]}
 
+  log ""
   log "#"
   log "# Link packages"
   log "#"
