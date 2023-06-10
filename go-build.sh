@@ -65,13 +65,7 @@ log "# out file:" $OUT_FILE
 function parse_imports() {
   local dir=$1
   shift;
-  local files="$@"
-
-  local absfiles=""
-  for file in $files
-  do
-    absfiles="$absfiles $dir/$file"
-  done
+  local absfiles="$@"
 
   local tmpfile=/tmp/tmp.txt
   cat $absfiles | tr '\n' '~' > $tmpfile
@@ -137,12 +131,7 @@ local afiles=""
 
 for f in $filenames
 do
-  local file
-  if [[ $std == "1" ]]; then
-    file=$GOROOT/src/$pkg/$f
-  else
-    file=$f
-  fi
+  local file=$f
   if [[ $f == *.go ]] ; then
     gofiles="$gofiles $file"
   elif [[ $f == *.s ]]; then
@@ -351,7 +340,7 @@ function find_files_in_dir() {
     local tag=$(get_build_tag $fullpath)
     if match_arch "$tag" ; then
          # log " => ok"
-         buildfiles="$buildfiles $f"
+         buildfiles="$buildfiles $fullpath"
     else
         :
          # log " => ng"
