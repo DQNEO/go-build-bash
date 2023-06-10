@@ -192,7 +192,7 @@ function build_pkg() {
 "
 
   local pkgdir=$GOROOT/src/$pkg
-  log "compiling $pkg: $pkgdir => $wdir/_pkg_.a"
+  log "compiling $pkg => $wdir/_pkg_.a"
   $TOOL_DIR/compile -c=4 -nolocalimports -pack $pkgopts $otheropts $gofiles
   if [[ -n $afiles ]]; then
     append_asm $pkg $afiles
@@ -358,7 +358,8 @@ function find_depends() {
 
   local pkgdir=$GOROOT/src/$pkg
 
-  log "$pkg:$pkgdir"
+  log "[$pkg]"
+  log "  dir:$pkgdir"
   local files=$(find_files_in_dir $pkgdir)
   local filenames=$(abspaths_to_basenames $files)
   log "  files:" $filenames
@@ -387,7 +388,8 @@ function go_build() {
   log "#"
   local pkg="main"
   local pkgdir=$main_dir
-  log "$pkg:$pkgdir"
+  log "[$pkg]"
+  log "  dir:$pkgdir"
   local files=$(find_files_in_dir $pkgdir)
 
   log "  files:" $files
@@ -405,7 +407,7 @@ function go_build() {
   log "#"
   log "# Got dependency tree"
   log "#"
-  cat $WORK/depends.txt | sed -e 's/:/ => /g' | tr -d '"' >/dev/stderr
+  cat $WORK/depends.txt | sed -e 's/^([^:]+):/[\1] => /g' | tr -d '"' >/dev/stderr
   log ""
   log "#"
   log "# Sorting dependency tree"
