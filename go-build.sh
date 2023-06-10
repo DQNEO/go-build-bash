@@ -7,11 +7,12 @@ set -eux
 
 export GOOS=linux
 export GOARCH=amd64
+
 readony GOROOT=`go env GOROOT`
 readony GOVERSION=`go env GOVERSION`
 readony WORK=/tmp/go-build-bash/$(date +%s)
-readony BLDID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
-readony B="-buildid $BLDID -goversion $GOVERSION"
+readony BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
+readony B="-buildid $BUILD_ID -goversion $GOVERSION"
 
 # Detect OS type
 if [[ $OSTYPE == "darwin"* ]]; then
