@@ -64,14 +64,14 @@ log "# out file:" $OUT_FILE
 
 function parseImportDecls() {
   set +e
-  local file=$1
-  cat $file \
+  local files="$@"
+  cat $files \
    | tr '\n' '~' \
    | grep --only-matching --no-filename -E '~import\s*\([^\)]*\)' \
    | grep -E --only-matching '\"[^\"]+\"' \
    | tr -d '"'
 
-  cat $file \
+  cat $files \
   | tr '\n' '~' \
    | grep --only-matching  --no-filename -E '~import\s*"[^"]+"' \
    | grep -E --only-matching '\"[^\"]+\"' \
@@ -83,12 +83,14 @@ function parse_imports() {
   local dir=$1
   shift;
   local files="$@"
-  {
-    for file in $files
-    do
-      parseImportDecls "$dir/$file"
-    done
-  } | sort | uniq | tr '\n' ' ' | awk '{$1=$1;print}'
+
+  local absfiles=""
+  for file in $files
+  do
+    absfiles="$absfiles $dir/$file"
+  done
+
+  parseImportDecls "$absfiles" | sort | uniq | tr '\n' ' ' | awk '{$1=$1;print}'
 }
 
 function dump_depend_tree() {
