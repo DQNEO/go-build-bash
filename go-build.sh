@@ -451,7 +451,6 @@ function go_build() {
   log "#"
   log "# Compiling the main package"
   log "#"
-  cd $main_dir
   build_pkg 0 "main" ${PKGS_FILES["main"]}
 
   log ""
