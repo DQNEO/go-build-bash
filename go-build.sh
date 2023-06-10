@@ -444,9 +444,7 @@ function go_build() {
   log "#"
   for pkg in $std_pkgs
   do
-    dir=$GOROOT/src/$pkg
-    files=${PKGS_FILES[$pkg]}
-    build_pkg 1 $pkg $files
+    build_pkg 1 $pkg ${PKGS_FILES[$pkg]}
   done
 
   log ""
