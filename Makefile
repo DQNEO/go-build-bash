@@ -1,5 +1,5 @@
 hello:
-	./go-build.sh
+	./go-build.sh -o hello
 
 test: hello
 	docker run --rm -v `pwd`:/mnt/ -w /mnt ubuntu ./$<

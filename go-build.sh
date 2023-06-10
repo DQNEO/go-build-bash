@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: go-build.sh SOURCE_DIRECTORY
-#   or : go-build.sh
+# Usage: go-build.sh -o BIN_NAME
 #
 set -eux
 
@@ -28,14 +27,15 @@ elif [[ $OSTYPE == "linux"* ]]; then
   HOST_GOOS=linux
 fi
 
-OUT_FILE=hello
-
 TOOL_DIR=$GOROOT/pkg/tool/${HOST_GOOS}_amd64
 
 if [[ $# -eq 0 ]]; then
   main_dir="."
+  OUT_FILE="go-build-bash"
 else
-  main_dir=$1
+  shift
+  OUT_FILE=$1
+  main_dir="."
 fi
 
 declare -A PKGS=()
