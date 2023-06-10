@@ -2,7 +2,7 @@
 #
 # Usage: go-build.sh -o BIN_NAME
 #
-set -eux
+set -eu
 
 export GOOS=linux
 export GOARCH=amd64
