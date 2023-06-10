@@ -408,26 +408,27 @@ function go_build() {
   cat $WORK/depends.txt | sed -e 's/:/ => /g' | tr -d '"' >/dev/stderr
   log ""
   log "#"
-  log "# Sorting dependency ree"
+  log "# Sorting dependency tree"
   log "#"
-  sort_pkgs  $WORK/depends.txt > $WORK/sorted.txt
-  cat $WORK/sorted.txt >/dev/stderr
-
-  std_pkgs=$(cat $WORK/sorted.txt | grep -v -e '^main$')
+  local sorted_pkgs=$(sort_pkgs  $WORK/depends.txt | grep -v -E '^main$' )
 
   # Assign package ID number
-  local id=1
-  for pkg in "main" $std_pkgs
+  PKGS_ID["main"]="001"
+  local id=2
+  for pkg in $sorted_pkgs
   do
-    PKGS_ID[$pkg]=$(printf "%03d" $id)
+    id_string=$(printf "%03d" $id)
+    PKGS_ID[$pkg]=$id_string
     id=$((id + 1))
+    log "[$id_string] $pkg"
   done
+  log "[001] main"
 
   log ""
   log "#"
   log "# Compiling packages"
   log "#"
-  for pkg in $std_pkgs
+  for pkg in $sorted_pkgs
   do
     build_pkg 1 $pkg ${PKGS_FILES[$pkg]}
   done
