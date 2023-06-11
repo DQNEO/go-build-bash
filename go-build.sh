@@ -269,13 +269,13 @@ function append_asm() {
     local basename=${f##*/}
     local baseo=${basename%.s}.o
     local ofile=$wdir/$baseo
-    log "  assembling an asm file : $basename => $baseo"
+    log "  assembling: $basename => $baseo"
     $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -o $ofile $f
     ofiles="$ofiles $ofile"
     obasenames="$obasenames $baseo"
   done
 
-  log "  append object file(s) to the archive: $obasenames => $wdir/_pkg_.a"
+  log "  appending object file(s): ($obasenames) => $wdir/_pkg_.a"
   $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
 }
 
@@ -431,10 +431,10 @@ function find_depends() {
   log "  dir:$pkgdir"
   local files=$(find_files_in_dir $pkgdir)
   local filenames=$(abspaths_to_basenames $files)
-  log "  files:" $filenames
+  log "  files: ($filenames)"
   PKGS_FILES[$pkg]="$files"
   local pkgs=$(parse_imports $pkgdir $files)
-  log "  imports:$pkgs"
+  log "  imports:($pkgs)"
   PKGS_DEPEND[$pkg]=$pkgs
   for _pkg in $pkgs; do
     find_depends $_pkg
