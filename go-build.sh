@@ -315,13 +315,15 @@ function match_arch() {
     # empty
     return 0
   else
+    _TRUE_="@@@"
+
     converted=$(
       echo $matched \
-      | sed -E 's/(unix|linux|amd64)/@@@/g' \
-      | sed -E 's/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/@@@/' \
+      | sed -E "s/(unix|$GOOS|$GOARCH)/$_TRUE_/g" \
+      | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
       | sed -E 's/goexperiment\.\w+/false/g' \
       | sed -E 's/\w+/false/g' \
-      | sed -E 's/@@@/true/g' \
+      | sed -E "s/$_TRUE_/true/g" \
       | sed -e 's/!true/false/g' \
       | sed -e 's/!false/true/g' \
       | sed -e 's/^true ||.*/true/' \
