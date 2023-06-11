@@ -158,7 +158,7 @@ function build_pkg() {
   local sstd=""
   local slang=""
 
-  if [[ ! $pkg =~ \. ]] && [[ $pkg != "main" ]] ; then
+  if [[ ! $pkg =~ \. ]] && [[ $pkg != "main" ]]; then
     std="1"
   fi
   if [[ -n $afiles ]]; then
@@ -196,12 +196,9 @@ function build_pkg() {
   fi
 
   local otheropts="$sruntime $scomplete $sstd $slang $asmopts "
-  local pkgopts="-p $pkg\
- -o $wdir/_pkg_.a\
+  local pkgopts="-p $pkg -o $wdir/_pkg_.a\
  -trimpath \"$wdir=>\"\
- -buildid $BUILD_ID\
- -goversion $GOVERSION\
- -importcfg $wdir/importcfg"
+ -buildid $BUILD_ID -goversion $GOVERSION -importcfg $wdir/importcfg"
 
   local compile_opts="$pkgopts $otheropts -c=4 -nolocalimports -pack "
   log "  compile option:" $compile_opts
@@ -226,7 +223,7 @@ function make_importcfg() {
 
   log "  generating the import config file: $cfgfile"
   log "      ----"
-  awk '{$1="      "$1}1' < $cfgfile >/dev/stderr
+  awk '{$1="      "$1}1' <$cfgfile >/dev/stderr
   log "      ----"
 }
 
@@ -367,8 +364,7 @@ function find_files_in_dir() {
 function abspaths_to_basenames() {
   local paths="$@"
   local files=""
-  for path in $paths
-  do
+  for path in $paths; do
     file=$(basename $path)
     files="$files $file"
   done
@@ -382,9 +378,9 @@ function find_depends() {
   fi
 
   local pkgdir=""
-  if [[ $pkg =~ \. ]] ; then
+  if [[ $pkg =~ \. ]]; then
     : # non-std lib
-      log "detected non-std lib: pkg=$pkg"
+    log "detected non-std lib: pkg=$pkg"
     if [[ $pkg = ${MAIN_MODULE}/* ]]; then
       relpath=${pkg#${MAIN_MODULE}}
       log "relpath=$relpath"
