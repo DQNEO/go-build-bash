@@ -42,6 +42,9 @@ elif [[ $OSTYPE == "linux"* ]]; then
   :
 fi
 
+ASM_D_GOOS=GOOS_${GOOS}
+ASM_D_GOARCH=GOARCH_${GOARCH}
+
 # Parse argv
 main_dir="."
 OUT_FILE=$DEFAULT_OUT_FILE
@@ -234,7 +237,7 @@ function gen_symabis() {
   wdir=$WORK/${PKGS_ID[$pkg]}
   outfile=$wdir/symabis
   log "  generating the symabis file: $outfile"
-  $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1 -gensymabis -o $outfile $asfiles
+  $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -gensymabis -o $outfile $asfiles
 }
 
 function append_asm() {
@@ -250,7 +253,7 @@ function append_asm() {
     local baseo=${basename%.s}.o
     local ofile=$wdir/$baseo
     log "  assembling an asm file : $basename => $baseo"
-    $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1 -o $ofile $f
+    $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -o $ofile $f
     ofiles="$ofiles $ofile"
     obasenames="$obasenames $baseo"
   done
