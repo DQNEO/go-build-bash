@@ -289,12 +289,14 @@ EOF
 
 }
 
+NON_GOOS='android|ios|illumos|hurd|zos|darwin|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris'
+NON_GOARCH='386|arm|armbe|arm64|arm64be|loong64|mips|mipsle|mips64.*|ppc64|ppc64le|riscv64|ppc|riscv|s390|s390x|sparc.*|wasm'
 function list_maching_files_in_dir() {
   local dir=$1
   find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n" |
     grep -v -E '_test.go' |
-    grep -v -E '_(android|ios|illumos|hurd|zos|darwin|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris)(\.|_)' |
-    grep -v -E '_(386|arm|armbe|arm64|arm64be|loong64|mips|mipsle|mips64.*|ppc64|ppc64le|riscv64|ppc|riscv|s390|s390x|sparc.*|wasm)\.(go|s)'
+    grep -v -E "_(${NON_GOOS})(\.|_)" |
+    grep -v -E "_(${NON_GOARCH})\.(go|s)"
 }
 
 function eval_build_tag() {
