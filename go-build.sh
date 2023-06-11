@@ -108,7 +108,7 @@ function parse_imports() {
       grep --only-matching --no-filename -E '~import\s*"[^"]+"'
   ) |
     grep -E --only-matching '\"[^\"]+\"' |
-    grep -v '"unsafe"' | tr -d '"' | sort | uniq | tr '\n' ' ' | awk '{$1=$1;print}'
+    grep -v '"unsafe"' | tr -d '"' | sort | uniq
   set -e
 }
 
@@ -435,10 +435,10 @@ function find_depends() {
   local filenames=$(abspaths_to_basenames $files)
   log "  files: ($filenames)"
   PKGS_FILES[$pkg]="$files"
-  local pkgs=$(parse_imports $pkgdir $files)
-  log "  imports:($pkgs)"
-  PKGS_DEPEND[$pkg]=$pkgs
-  for _pkg in $pkgs; {
+  local pkgs=($(parse_imports $pkgdir $files))
+  log "  imports:(${pkgs[@]})"
+  PKGS_DEPEND[$pkg]="${pkgs[@]}"
+  for _pkg in "${pkgs[@]}"; {
     find_depends $_pkg
   }
 }
@@ -465,11 +465,10 @@ function go_build() {
 
   log "  files:" $files
   PKGS_FILES[$pkg]="$files"
-  local pkgs=$(parse_imports $pkgdir $files)
-  log "  imports:$pkgs"
-  PKGS_DEPEND[$pkg]=$pkgs
-
-  for _pkg in $pkgs; {
+  local pkgs=($(parse_imports $pkgdir $files))
+  log "  imports:(${pkgs[@]})"
+  PKGS_DEPEND[$pkg]="${pkgs[@]}"
+  for _pkg in "${pkgs[@]}"; {
     find_depends $_pkg
   }
 
