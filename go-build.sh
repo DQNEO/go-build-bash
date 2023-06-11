@@ -407,7 +407,7 @@ function go_build() {
   log "#"
   log "# Got dependency tree"
   log "#"
-  cat $WORK/depends.txt | sed -e 's/^([^:]+):/[\1] => /g' | tr -d '"' >/dev/stderr
+  cat $WORK/depends.txt | sed -e 's/:/ => /g' | tr -d '"' >/dev/stderr
   log ""
   log "#"
   log "# Sorting dependency tree"
