@@ -125,11 +125,13 @@ function build_pkg() {
 
   local gofiles=""
   local afiles=""
+  local gobasenames="" # for log
 
   for f in $filenames; do
     local file=$f
     if [[ $f == *.go ]]; then
       gofiles="$gofiles $file"
+      gobasenames="$gobasenames $(basename $file)"
     elif [[ $f == *.s ]]; then
       afiles="$afiles $file"
     else
@@ -139,7 +141,7 @@ function build_pkg() {
   done
 
   local wdir=$WORK/${PKGS_ID[$pkg]}
-
+  log ""
   log "[$pkg]"
   log "  mkdir -p $wdir/"
   mkdir -p $wdir/
@@ -185,7 +187,7 @@ function build_pkg() {
     slang="-lang=go1.20"
   fi
 
-  local otheropts=" $slang $sstd $sruntime $scomplete $asmopts "
+  local otheropts="$sruntime $scomplete $sstd $slang $asmopts "
   local pkgopts="-p $pkg\
  -o $wdir/_pkg_.a\
  -trimpath \"$wdir=>\"\
@@ -193,11 +195,11 @@ function build_pkg() {
  -goversion $GOVERSION\
  -importcfg $wdir/importcfg"
 
-  local compile_opts="-c=4 -nolocalimports -pack $pkgopts $otheropts"
-  $TOOL_DIR/compile $compile_opts $gofiles
+  local compile_opts="$pkgopts $otheropts -c=4 -nolocalimports -pack "
   log "  compile option:" $compile_opts
+  log "  compiling:${gobasenames}"
+  $TOOL_DIR/compile $compile_opts $gofiles
   if [[ -n $afiles ]]; then
-    log "  assembling .s files"
     append_asm $pkg $afiles
   fi
   $TOOL_DIR/buildid -w $wdir/_pkg_.a # internal
@@ -223,10 +225,11 @@ function make_importcfg() {
 function gen_symabis() {
   pkg=$1
   shift
-  files="$@"
+  asfiles="$@"
   wdir=$WORK/${PKGS_ID[$pkg]}
-
-  $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1 -gensymabis -o $wdir/symabis $files
+  outfile=$wdir/symabis
+  log "  generating the symabis file: $outfile"
+  $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1 -gensymabis -o $outfile $asfiles
 }
 
 function append_asm() {
@@ -236,14 +239,18 @@ function append_asm() {
 
   wdir=$WORK/${PKGS_ID[$pkg]}
   local ofiles=""
+  local obasenames=""
   for f in $files; do
     local basename=${f##*/}
     local baseo=${basename%.s}.o
     local ofile=$wdir/$baseo
+    log "  assembling an asm file : $basename => $baseo"
     $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D GOOS_linux -D GOARCH_amd64 -compiling-runtime -D GOAMD64_v1 -o $ofile $f
     ofiles="$ofiles $ofile"
+    obasenames="$obasenames $baseo"
   done
 
+  log "  append object file(s) to the archive: $obasenames => $wdir/_pkg_.a"
   $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
 }
 
@@ -359,6 +366,7 @@ function abspaths_to_basenames() {
   done
   echo $files
 }
+
 function find_depends() {
   local pkg=$1
   if [ -v 'PKGS_DEPEND[$pkg]' ]; then
