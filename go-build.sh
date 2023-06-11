@@ -15,11 +15,11 @@ GOROOT=$(go env GOROOT)
 GOVERSION=$(go env GOVERSION)
 TOOL_DIR=$(go env GOTOOLDIR)
 
-if [[ ! -v GOARCH ]] || [[ -z $GOARCH ]]; then
+if [[ (! -v GOARCH) || -z $GOARCH ]]; then
   GOARCH=$(go env GOHOSTARCH)
 fi
 
-if [[ ! -v GOOS ]] || [[ -z $GOOS ]]; then
+if [[ ( ! -v GOOS ) || -z $GOOS ]]; then
   GOOS=$(go env GOHOSTOS)
 fi
 
@@ -202,8 +202,7 @@ function build_pkg() {
   fi
   if [[ "$std" = "1" ]]; then
     # see /usr/local/opt/go/libexec/src/cmd/go/internal/work/gc.go:119
-    if [[ $pkg = "os" ]] || [[ $pkg = "sync" ]] || [[ $pkg = "syscall" ]] ||
-      [[ $pkg = "internal/poll" ]] || [[ $pkg = "time" ]]; then
+    if [[ $pkg = "os" || $pkg = "sync" || $pkg = "syscall" || $pkg = "internal/poll" || $pkg = "time" ]]; then
       complete="0"
     fi
   fi
@@ -334,7 +333,7 @@ function eval_build_tag() {
   _TRUE_="@@@"
 
   IS_UNIX=""
-  if [[ $GOOS = "linux" ]] || [[ $GOOS = "darwin" ]]; then
+  if [[ $GOOS = "linux" || $GOOS = "darwin" ]]; then
     IS_UNIX="unix|"
   fi
 
