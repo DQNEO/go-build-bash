@@ -23,5 +23,5 @@ hello: *.go go-build.sh Makefile
 
 .PHONEY: clean
 clean:
-	rm -rf ./hello ./hello.* /tmp/go-build-bash
+	rm -rf ./hello ./hello.* /tmp/go-build-bash ./go-build-bash
 
