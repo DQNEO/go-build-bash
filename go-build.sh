@@ -69,14 +69,14 @@ fi
 # Parse argv
 main_dir="."
 OUT_FILE=$(basename $MAIN_MODULE)
-if [[ $# -ge 1 ]]; then
+if (( $# > 1 )); then
   if [[ $1 == "-o" ]]; then
     shift
     OUT_FILE=$1
     shift
   fi
 
-  if [[ $# -ge 1 ]]; then
+  if (( $# > 1 )); then
     main_dir=$1
   fi
 fi
