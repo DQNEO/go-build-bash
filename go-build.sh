@@ -307,7 +307,7 @@ EOF
 
   log ""
   log "#"
-  log "# Move the binary executable file"
+  log "# Moving the binary executable"
   log "#"
   log mv $wdir/exe/a.out $OUT_FILE
 
@@ -513,7 +513,7 @@ function go_build() {
 
   log ""
   log "#"
-  log "# Link all packages"
+  log "# Linking all packages into a binary executable"
   log "#"
   do_link
 }
