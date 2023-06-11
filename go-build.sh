@@ -117,9 +117,7 @@ function sort_pkgs() {
 }
 
 function build_pkg() {
-  std=$1
-  pkg=$2
-  shift
+  pkg=$1
   shift
   filenames="$@"
 
@@ -150,9 +148,13 @@ function build_pkg() {
   local asmopts=""
   local sruntime=""
   local scomplete=""
+  local std=""
   local sstd=""
   local slang=""
 
+  if [[ ! $pkg =~ \. ]] && [[ $pkg != "main" ]] ; then
+    std="1"
+  fi
   if [[ -n $afiles ]]; then
     if [[ "$std" = "1" ]]; then
       touch $wdir/go_asm.h
@@ -468,14 +470,14 @@ function go_build() {
   log "# Compiling packages"
   log "#"
   for pkg in $sorted_pkgs; do
-    build_pkg 1 $pkg ${PKGS_FILES[$pkg]}
+    build_pkg $pkg ${PKGS_FILES[$pkg]}
   done
 
   log ""
   log "#"
   log "# Compiling the main package"
   log "#"
-  build_pkg 0 "main" ${PKGS_FILES["main"]}
+  build_pkg "main" ${PKGS_FILES["main"]}
 
   log ""
   log "#"
