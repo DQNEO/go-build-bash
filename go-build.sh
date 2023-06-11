@@ -58,6 +58,7 @@ if [[ $# -ge 1 ]]; then
   fi
 fi
 
+MAIN_MODULE=github.com/DQNEO/go-build-bash # TODO: parse go.mod
 log "# main directory:" $main_dir
 log "# out file:" $OUT_FILE
 
@@ -356,7 +357,28 @@ function find_depends() {
     return
   fi
 
-  local pkgdir=$GOROOT/src/$pkg
+  local pkgdir=""
+  if [[ $pkg =~ \. ]] ; then
+    : # non-std lib
+      log "detected non-std lib: pkg=$pkg"
+    if [[ $pkg = ${MAIN_MODULE}/* ]]; then
+      relpath=${pkg#${MAIN_MODULE}}
+      log "relpath=$relpath"
+      pkgdir=${main_dir}${relpath}
+    else
+      log "implement me"
+      return 1
+    fi
+
+  else
+    : # std lib
+    pkgdir=$GOROOT/src/$pkg
+  fi
+
+  if [[ ! -e $pkgdir ]]; then
+    log "[ERROR] directory not found: $pkgdir"
+    return 1
+  fi
 
   log "[$pkg]"
   log "  dir:$pkgdir"
