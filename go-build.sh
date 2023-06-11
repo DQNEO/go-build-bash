@@ -316,12 +316,18 @@ function match_arch() {
     return 0
   else
     converted=$(
-      echo $matched |
-        sed -E 's/(unix|linux|amd64)/@@@/g' |
-        sed -E 's/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/@@@/' | sed -E 's/goexperiment\.\w+/false/g' |
-        sed -E 's/\w+/false/g' | sed -E 's/@@@/true/g' |
-        sed -e 's/!true/false/g' | sed -e 's/!false/true/g' |
-        sed -e 's/^true ||.*/true/' | sed -e 's/^true &&//g' | sed -e 's/^false ||//g' | sed -e 's/^false &&.*/false/g'
+      echo $matched \
+      | sed -E 's/(unix|linux|amd64)/@@@/g' \
+      | sed -E 's/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/@@@/' \
+      | sed -E 's/goexperiment\.\w+/false/g' \
+      | sed -E 's/\w+/false/g' \
+      | sed -E 's/@@@/true/g' \
+      | sed -e 's/!true/false/g' \
+      | sed -e 's/!false/true/g' \
+      | sed -e 's/^true ||.*/true/' \
+      | sed -e 's/^true &&//g' \
+      | sed -e 's/^false ||//g' \
+      | sed -e 's/^false &&.*/false/g'
     )
     :
     if eval $converted; then
