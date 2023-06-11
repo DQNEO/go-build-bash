@@ -113,15 +113,15 @@ function parse_imports() {
 }
 
 function dump_depend_tree() {
-  for p in "${!PKGS_DEPEND[@]}"; do
+  for p in "${!PKGS_DEPEND[@]}"; {
     echo -n "$p:"
-    for v in ${PKGS_DEPEND[$p]}; do
-      for w in $v; do
+    for v in ${PKGS_DEPEND[$p]}; {
+      for w in $v; {
         echo -n "\"$w\" "
-      done
-    done
+      }
+    }
     echo ""
-  done
+  }
 }
 
 # Sort packages topologically
@@ -137,11 +137,11 @@ function sort_pkgs() {
     if [[ -z $leaves ]]; then
       return
     fi
-    for l in $leaves; do
+    for l in $leaves; {
       cat $workfile | grep -v -e "^$l:" | sed -E "s#\"$l\"##g" >$tmpfile
       mv -f $tmpfile $workfile
       echo $l
-    done
+    }
   done
 }
 
@@ -154,7 +154,7 @@ function build_pkg() {
   local afiles=""
   local gobasenames=() # for logging
 
-  for f in $filenames; do
+  for f in $filenames; {
     local file=$f
     if [[ $f == *.go ]]; then
       gofiles="$gofiles $file"
@@ -165,7 +165,7 @@ function build_pkg() {
       echo "ERROR" >/dev/stderr
       exit 1
     fi
-  done
+  }
 
   local wdir=$WORK/${PKGS_ID[$pkg]}
   log ""
@@ -238,9 +238,9 @@ function make_importcfg() {
   local cfgfile=$wdir/importcfg
   (
     echo '# import config'
-    for f in ${PKGS_DEPEND[$pkg]}; do
+    for f in ${PKGS_DEPEND[$pkg]}; {
       echo "packagefile $f=$WORK/${PKGS_ID[$f]}/_pkg_.a"
-    done
+    }
   ) >$cfgfile
 
   log "  generating the import config file: $cfgfile"
@@ -267,7 +267,7 @@ function append_asm() {
   wdir=$WORK/${PKGS_ID[$pkg]}
   local ofiles=""
   local obasenames=""
-  for f in $files; do
+  for f in $files; {
     local basename=$(basename $f)
     local baseo=${basename%.s}.o
     local ofile=$wdir/$baseo
@@ -275,7 +275,7 @@ function append_asm() {
     $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -o $ofile $f
     ofiles="$ofiles $ofile"
     obasenames="$obasenames $baseo"
-  done
+  }
 
   log "  appending object file(s): ($obasenames) => $wdir/_pkg_.a"
   $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
@@ -286,10 +286,10 @@ function do_link() {
   local pkg=main
   local wdir=$WORK/${PKGS_ID[$pkg]}
   local pkgsfiles=""
-  for p in "${!PKGS_ID[@]}"; do
+  for p in "${!PKGS_ID[@]}"; {
     pkgsfiles="${pkgsfiles}packagefile ${p}=$WORK/${PKGS_ID[$p]}/_pkg_.a
 "
-  done
+  }
   cat >$wdir/importcfg.link <<EOF # internal
 packagefile github.com/DQNEO/go-samples/birudo=$wdir/_pkg_.a
 $pkgsfiles
@@ -370,7 +370,7 @@ function find_files_in_dir() {
   local gofiles=()
   local asfiles=()
 
-  for f in $files; do
+  for f in $files; {
     local fullpath="$dir/$f"
     local tag=$(get_build_tag $fullpath)
     if eval_build_tag "$tag"; then
@@ -383,7 +383,7 @@ function find_files_in_dir() {
         exit 1
       fi
     fi
-  done
+  }
 
   echo "${gofiles[@]} ${asfiles[@]}"
 }
@@ -393,10 +393,10 @@ function find_files_in_dir() {
 function abspaths_to_basenames() {
   local paths="$@"
   local files=""
-  for path in $paths; do
+  for path in $paths; {
     file=$(basename $path)
     files="$files $file"
-  done
+  }
   echo $files
 }
 
@@ -438,9 +438,9 @@ function find_depends() {
   local pkgs=$(parse_imports $pkgdir $files)
   log "  imports:($pkgs)"
   PKGS_DEPEND[$pkg]=$pkgs
-  for _pkg in $pkgs; do
+  for _pkg in $pkgs; {
     find_depends $_pkg
-  done
+  }
 }
 
 function get_std_pkg_dir() {
@@ -469,9 +469,9 @@ function go_build() {
   log "  imports:$pkgs"
   PKGS_DEPEND[$pkg]=$pkgs
 
-  for _pkg in $pkgs; do
+  for _pkg in $pkgs; {
     find_depends $_pkg
-  done
+  }
 
   dump_depend_tree >$WORK/depends.txt
   log ""
@@ -488,21 +488,21 @@ function go_build() {
   # Assign package ID number
   PKGS_ID["main"]="001"
   local id=2
-  for pkg in $sorted_pkgs; do
+  for pkg in $sorted_pkgs; {
     id_string=$(printf "%03d" $id)
     PKGS_ID[$pkg]=$id_string
     id=$((id + 1))
     log "[$id_string] $pkg"
-  done
+  }
   log "[001] main"
 
   log ""
   log "#"
   log "# Compiling packages"
   log "#"
-  for pkg in $sorted_pkgs; do
+  for pkg in $sorted_pkgs; {
     build_pkg $pkg ${PKGS_FILES[$pkg]}
-  done
+  }
 
   log ""
   log "#"
