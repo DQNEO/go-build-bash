@@ -268,7 +268,7 @@ function append_asm() {
   local ofiles=""
   local obasenames=""
   for f in $files; do
-    local basename=${f##*/}
+    local basename=$(basename $f)
     local baseo=${basename%.s}.o
     local ofile=$wdir/$baseo
     log "  assembling: $basename => $baseo"
