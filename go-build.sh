@@ -31,7 +31,6 @@ function log() {
 
 # Detect OS type
 if [[ $OSTYPE == "darwin"* ]]; then
-  HOST_GOOS=darwin
   if ! which gfind >/dev/null || ! which gsed >/dev/null; then
     "gfind and gsed commands are required. Please try 'brew install findutils gnu-sed'" >/dev/stderr
     exit 1
@@ -40,7 +39,7 @@ if [[ $OSTYPE == "darwin"* ]]; then
   alias find=gfind
   alias sed=gsed
 elif [[ $OSTYPE == "linux"* ]]; then
-  HOST_GOOS=linux
+  :
 fi
 
 # Parse argv
