@@ -7,8 +7,6 @@ set -eu
 export GOOS=linux
 export GOARCH=amd64
 
-DEFAULT_OUT_FILE="go-build-bash"
-
 GOROOT=$(go env GOROOT)
 GOVERSION=$(go env GOVERSION)
 TOOL_DIR=$(go env GOTOOLDIR)
@@ -45,9 +43,14 @@ fi
 ASM_D_GOOS=GOOS_${GOOS}
 ASM_D_GOARCH=GOARCH_${GOARCH}
 
+# Parse go.mod
+if [[ -e go.mod ]]; then
+  MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
+fi
+
 # Parse argv
 main_dir="."
-OUT_FILE=$DEFAULT_OUT_FILE
+OUT_FILE=$(basename $MAIN_MODULE)
 if [[ $# -ge 1 ]]; then
   if [[ $1 == "-o" ]]; then
     shift
@@ -60,10 +63,6 @@ if [[ $# -ge 1 ]]; then
   fi
 fi
 
-# Parse go.mod
-if [[ -e go.mod ]]; then
-  MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
-fi
 log "# main directory:" $main_dir
 log "# out file:" $OUT_FILE
 log "# main module: $MAIN_MODULE"
