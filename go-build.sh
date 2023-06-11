@@ -367,17 +367,17 @@ function get_build_tag() {
 function find_files_in_dir() {
   local dir=$1
   local files=$(list_maching_files_in_dir $dir)
-  local gofiles=""
-  local asfiles=""
+  local gofiles=()
+  local asfiles=()
 
   for f in $files; do
     local fullpath="$dir/$f"
     local tag=$(get_build_tag $fullpath)
     if eval_build_tag "$tag"; then
       if [[ $fullpath == *.go ]]; then
-        gofiles="$gofiles $fullpath"
+        gofiles+=($fullpath)
       elif [[ $fullpath == *.s ]]; then
-        asfiles="$asfiles $fullpath"
+        asfiles+=($fullpath)
       else
         log "something wrong happened"
         exit 1
@@ -385,7 +385,7 @@ function find_files_in_dir() {
     fi
   done
 
-  echo "$gofiles $asfiles"
+  echo "${gofiles[@]} ${asfiles[@]}"
 }
 
 # Convert absolute filenames to base names.
