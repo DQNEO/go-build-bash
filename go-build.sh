@@ -297,15 +297,6 @@ function list_maching_files_in_dir() {
     grep -v -E '_(386|arm|armbe|arm64|arm64be|loong64|mips|mipsle|mips64.*|ppc64|ppc64le|riscv64|ppc|riscv|s390|s390x|sparc.*|wasm)\.(go|s)'
 }
 
-function get_build_tag() {
-  local fullpath=$1
-  set +e
-  matched=$(grep -m 1 --only-matching -E '^//go:build .+$' $fullpath)
-  set -e
-  matched=${matched##"//go:build "}
-  echo $matched
-}
-
 function match_arch() {
   local matched=$1
   if [[ $matched = "ignore" ]]; then
@@ -341,6 +332,16 @@ function match_arch() {
   fi
 
 }
+
+function get_build_tag() {
+  local fullpath=$1
+  set +e
+  matched=$(grep -m 1 --only-matching -E '^//go:build .+$' $fullpath)
+  set -e
+  matched=${matched##"//go:build "}
+  echo $matched
+}
+
 
 function find_files_in_dir() {
   local dir=$1
