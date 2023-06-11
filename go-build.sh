@@ -309,9 +309,14 @@ function eval_build_tag() {
 
   _TRUE_="@@@"
 
-  converted=$(
+  IS_UNIX=""
+  if [[ $GOOS = "linux" ]] || [[ $GOOS = "darwin" ]]; then
+    IS_UNIX="unix|"
+  fi
+
+  logical_expr=$(
     echo $matched \
-    | sed -E "s/(unix|$GOOS|$GOARCH)/$_TRUE_/g" \
+    | sed -E "s/(${IS_UNIX}$GOOS|$GOARCH)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
     | sed -E 's/goexperiment\.\w+/false/g' \
     | sed -E 's/\w+/false/g' \
@@ -323,15 +328,7 @@ function eval_build_tag() {
     | sed -e 's/^false ||//g' \
     | sed -e 's/^false &&.*/false/g'
   )
-  :
-  if eval $converted; then
-    # do build
-    return 0
-  else
-    # do not build
-    return 1
-  fi
-
+  eval $logical_expr;
 }
 
 function get_build_tag() {
