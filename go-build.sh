@@ -297,7 +297,7 @@ function list_maching_files_in_dir() {
     grep -v -E '_(386|arm|armbe|arm64|arm64be|loong64|mips|mipsle|mips64.*|ppc64|ppc64le|riscv64|ppc|riscv|s390|s390x|sparc.*|wasm)\.(go|s)'
 }
 
-function match_arch() {
+function eval_build_tag() {
   local matched=$1
   if [[ $matched = "ignore" ]]; then
     # ignore
@@ -327,6 +327,7 @@ function match_arch() {
       # do build
       return 0
     else
+      # do not build
       return 1
     fi
   fi
@@ -352,7 +353,7 @@ function find_files_in_dir() {
   for f in $files; do
     local fullpath="$dir/$f"
     local tag=$(get_build_tag $fullpath)
-    if match_arch "$tag"; then
+    if eval_build_tag "$tag"; then
       if [[ $fullpath == *.go ]]; then
         gofiles="$gofiles $fullpath"
       elif [[ $fullpath == *.s ]]; then
