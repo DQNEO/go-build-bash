@@ -286,7 +286,7 @@ EOF
   log "#"
   log "# Move the binary executable file"
   log "#"
-  echo mv $wdir/exe/a.out $OUT_FILE
+  log mv $wdir/exe/a.out $OUT_FILE
 
 }
 
