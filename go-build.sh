@@ -57,9 +57,13 @@ if [[ $# -ge 1 ]]; then
   fi
 fi
 
-MAIN_MODULE=github.com/DQNEO/go-build-bash # TODO: parse go.mod
+# Parse go.mod
+if [[ -e go.mod ]]; then
+  MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
+fi
 log "# main directory:" $main_dir
 log "# out file:" $OUT_FILE
+log "# main module: $MAIN_MODULE"
 
 function parse_imports() {
   local dir=$1
