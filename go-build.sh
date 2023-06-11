@@ -4,12 +4,18 @@
 #
 set -eu
 
-export GOOS=linux
-export GOARCH=amd64
-
 GOROOT=$(go env GOROOT)
 GOVERSION=$(go env GOVERSION)
 TOOL_DIR=$(go env GOTOOLDIR)
+
+if [[ -z $GOARCH ]]; then
+  GOARCH=$(go env GOHOSTARCH)
+fi
+
+if [[ -z $GOOS ]]; then
+  GOOS=$(go env GOHOSTOS)
+fi
+
 
 WORK=/tmp/go-build-bash/$(date +%s)
 BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
@@ -43,6 +49,19 @@ fi
 ASM_D_GOOS=GOOS_${GOOS}
 ASM_D_GOARCH=GOARCH_${GOARCH}
 
+# TODO: Stop prohibited list style and use allowed list instead
+if  [[ $GOOS = "darwin" ]]; then
+  NON_GOOS="linux"
+elif [[ $GOOS = "linux" ]]; then
+  NON_GOOS="darwin"
+else
+  echo "ERROR: unsupported GOOS: $GOOS" >/dev/stderr
+  exit 1
+fi
+
+NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris"
+NON_GOARCH_LIST='386|arm.*|loong64|mips.*|ppc64.*|riscv.*|ppc|s390.*|sparc.*|wasm'
+
 # Parse go.mod
 if [[ -e go.mod ]]; then
   MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
@@ -63,6 +82,8 @@ if [[ $# -ge 1 ]]; then
   fi
 fi
 
+log "# GOOS:" $GOOS
+log "# GOARCH" $GOARCH
 log "# main directory:" $main_dir
 log "# out file:" $OUT_FILE
 log "# main module: $MAIN_MODULE"
@@ -289,14 +310,12 @@ EOF
 
 }
 
-NON_GOOS='android|ios|illumos|hurd|zos|darwin|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris'
-NON_GOARCH='386|arm|armbe|arm64|arm64be|loong64|mips|mipsle|mips64.*|ppc64|ppc64le|riscv64|ppc|riscv|s390|s390x|sparc.*|wasm'
 function list_maching_files_in_dir() {
   local dir=$1
   find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n" |
     grep -v -E '_test.go' |
-    grep -v -E "_(${NON_GOOS})(\.|_)" |
-    grep -v -E "_(${NON_GOARCH})\.(go|s)"
+    grep -v -E "_(${NON_GOOS_LIST})(\.|_)" |
+    grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
 }
 
 function eval_build_tag() {
