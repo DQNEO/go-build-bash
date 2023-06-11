@@ -139,6 +139,9 @@ function build_pkg() {
   done
 
   local wdir=$WORK/${PKGS_ID[$pkg]}
+
+  log "[$pkg]"
+  log "  mkdir -p $wdir/"
   mkdir -p $wdir/
   make_importcfg $pkg
 
@@ -183,19 +186,18 @@ function build_pkg() {
   fi
 
   local otheropts=" $slang $sstd $sruntime $scomplete $asmopts "
-  local pkgopts=" \
-  -p $pkg \
-  -o $wdir/_pkg_.a \
-  -trimpath \"$wdir=>\" \
-  -buildid $BUILD_ID \
-  -goversion $GOVERSION \
-  -importcfg $wdir/importcfg \
-"
+  local pkgopts="-p $pkg\
+ -o $wdir/_pkg_.a\
+ -trimpath \"$wdir=>\"\
+ -buildid $BUILD_ID\
+ -goversion $GOVERSION\
+ -importcfg $wdir/importcfg"
 
-  local pkgdir=$GOROOT/src/$pkg
-  log "compiling $pkg => $wdir/_pkg_.a"
-  $TOOL_DIR/compile -c=4 -nolocalimports -pack $pkgopts $otheropts $gofiles
+  local compile_opts="-c=4 -nolocalimports -pack $pkgopts $otheropts"
+  $TOOL_DIR/compile $compile_opts $gofiles
+  log "  compile option:" $compile_opts
   if [[ -n $afiles ]]; then
+    log "  assembling .s files"
     append_asm $pkg $afiles
   fi
   $TOOL_DIR/buildid -w $wdir/_pkg_.a # internal
@@ -204,12 +206,18 @@ function build_pkg() {
 function make_importcfg() {
   pkg=$1
   wdir=$WORK/${PKGS_ID[$pkg]}
+  local cfgfile=$wdir/importcfg
   (
     echo '# import config'
     for f in ${PKGS_DEPEND[$pkg]}; do
       echo "packagefile $f=$WORK/${PKGS_ID[$f]}/_pkg_.a"
     done
-  ) >$wdir/importcfg
+  ) >$cfgfile
+
+  log "  generating the import config file: $cfgfile"
+  log "      ----"
+  awk '{$1="      "$1}1' < $cfgfile >/dev/stderr
+  log "      ----"
 }
 
 function gen_symabis() {
