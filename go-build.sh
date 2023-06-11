@@ -152,13 +152,13 @@ function build_pkg() {
 
   local gofiles=""
   local afiles=""
-  local gobasenames="" # for log
+  local gobasenames=() # for logging
 
   for f in $filenames; do
     local file=$f
     if [[ $f == *.go ]]; then
       gofiles="$gofiles $file"
-      gobasenames="$gobasenames $(basename $file)"
+      gobasenames+=($(basename $file))
     elif [[ $f == *.s ]]; then
       afiles="$afiles $file"
     else
@@ -225,7 +225,7 @@ function build_pkg() {
 
   local compile_opts="$pkgopts $otheropts -c=4 -nolocalimports -pack "
   log "  compile option:" $compile_opts
-  log "  compiling:${gobasenames}"
+  log "  compiling: (${gobasenames[@]})"
   $TOOL_DIR/compile $compile_opts $gofiles
   if [[ -n $afiles ]]; then
     append_asm $pkg $afiles
