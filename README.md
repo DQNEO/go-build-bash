@@ -14,12 +14,14 @@ The purpose of this project is to help go users learn how `go build` works.
 * CPU:x86-64
 
 ## Target machine
-* Linux x86-64
+* Linux x86-64 or MacOS
+
+4 combinations of cross OS building (Host: darwin,linux) => (Target: darwin,linux) are supported.
 
 # Usage
 
 ```
-$ ./go-build.sh -o hello
+$ GOOS=linux GOARCH=amd64 ./go-build.sh -o hello
 $ docker run --rm -v `pwd`:/mnt/ -w /mnt busybox ./hello
 
 hello world (go1.20.4)
@@ -27,8 +29,8 @@ hello world (go1.20.4)
 
 # TODO
 * [ ] Refactor code
-* [ ] Support more use cases (user's packages)
-* [ ] Apple silicon support
+* [ ] Support vendor directory
+* [ ] Support Apple silicon
 * [ ] Debug option
 
 # License
