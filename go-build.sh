@@ -4,6 +4,13 @@
 #
 set -eu
 
+debug="true" # true or false
+function log() {
+  if eval $debug; then
+    echo "$@" >/dev/stderr
+  fi
+}
+
 GOROOT=$(go env GOROOT)
 GOVERSION=$(go env GOVERSION)
 TOOL_DIR=$(go env GOTOOLDIR)
@@ -24,14 +31,6 @@ BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
 declare -A PKGS_ID=()
 declare -A PKGS_DEPEND=()
 declare -A PKGS_FILES=()
-
-debug="true" # true or false
-
-function log() {
-  if eval $debug; then
-    echo "$@" >/dev/stderr
-  fi
-}
 
 # Detect OS type
 if [[ $OSTYPE == "darwin"* ]]; then
@@ -82,11 +81,15 @@ if [[ $# -ge 1 ]]; then
   fi
 fi
 
-log "# GOOS:" $GOOS
-log "# GOARCH" $GOARCH
-log "# main directory:" $main_dir
-log "# out file:" $OUT_FILE
-log "# main module: $MAIN_MODULE"
+log "#"
+log "# Initial settings"
+log "#"
+log "GOOS:" $GOOS
+log "GOARCH:" $GOARCH
+log "main module:" $MAIN_MODULE
+log "main directory:" $main_dir
+log "out file:" $OUT_FILE
+log "work dir:" $WORK
 
 function parse_imports() {
   local dir=$1
