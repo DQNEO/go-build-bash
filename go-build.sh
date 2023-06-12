@@ -45,6 +45,8 @@ fi
 
 
 # Parse go.mod
+declare MAIN_MODULE
+declare MAIN_MODULE_DIR=$(pwd)
 if [[ -e go.mod ]]; then
   MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
 fi
@@ -55,7 +57,6 @@ fi
 #	Listed main packages are built into executables and listed
 #	non-main packages are built into .a files (the default
 #	behavior).
-main_dir="."
 OUT_FILE=$(basename $MAIN_MODULE)
 if (( $# >= 1 )); then
   if [[ $1 == "-o" ]]; then
@@ -63,10 +64,13 @@ if (( $# >= 1 )); then
     OUT_FILE=$1
     shift
   fi
+fi
 
-  if (( $# >= 1 )); then
-    main_dir=$1
-  fi
+declare ARG
+if (( $# >= 1 )); then
+  ARG=$1
+else
+  ARG="."
 fi
 
 debug="true" # true or false
@@ -82,9 +86,10 @@ log "#"
 log "GOOS:" $GOOS
 log "GOARCH:" $GOARCH
 log "main module:" $MAIN_MODULE
-log "main directory:" $main_dir
+log "ARG:" $ARG
 log "out file:" $OUT_FILE
 log "work dir:" $WORK
+
 
 # Associative arrays to manage properties of each package
 declare -A PKGS_ID=()
@@ -432,7 +437,7 @@ function find_depends() {
       log "  assuming in-module package"
       relpath=${pkg#${MAIN_MODULE}}
       log "relpath=$relpath"
-      pkgdir=${main_dir}${relpath}
+      pkgdir=${MAIN_MODULE_DIR}${relpath}
     elif [[ $pkg = golang.org/x/* ]]; then
       log "  assuming sub std package"
       if [[ -e ./vendor/${pkg} ]]; then
@@ -479,6 +484,9 @@ function get_std_pkg_dir() {
 
 # main procedure
 function go_build() {
+  local pkg="main"
+  local pkgdir=$1
+
   rm -f $OUT_FILE
   mkdir -p $WORK
 
@@ -486,8 +494,6 @@ function go_build() {
   log "#"
   log "# Finding files"
   log "#"
-  local pkg="main"
-  local pkgdir=$main_dir
   log "[$pkg]"
   log "  dir:$pkgdir"
   local files=$(find_matching_files $pkgdir)
@@ -549,4 +555,4 @@ function go_build() {
   do_link
 }
 
-go_build
+go_build $ARG
