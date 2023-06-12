@@ -266,7 +266,7 @@ function append_asm() {
 
   wdir=$WORK/${PKGS_ID[$pkg]}
   local ofiles=""
-  local obasenames=""
+  local obasenames=() # for logging
   for f in $files; {
     local basename=$(basename $f)
     local baseo=${basename%.s}.o
@@ -274,10 +274,10 @@ function append_asm() {
     log "  assembling: $basename => $baseo"
     $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -o $ofile $f
     ofiles="$ofiles $ofile"
-    obasenames="$obasenames $baseo"
+    obasenames+=($baseo)
   }
 
-  log "  appending object file(s): ($obasenames) => $wdir/_pkg_.a"
+  log "  appending object file(s): (${obasenames[@]}) => $wdir/_pkg_.a"
   $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
 }
 
