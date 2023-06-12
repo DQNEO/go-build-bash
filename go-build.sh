@@ -384,7 +384,10 @@ function find_matching_files() {
       fi
     fi
   }
-
+  if (( ${#gofiles[@]} + ${#asfiles[@]} == 0 )); then
+    log "ERROR: no files to process"
+    return 1
+  fi
   echo "${gofiles[@]} ${asfiles[@]}"
 }
 
@@ -432,6 +435,10 @@ function find_depends() {
   log "[$pkg]"
   log "  dir:$pkgdir"
   local files=$(find_matching_files $pkgdir)
+  if [[ -z $files ]]; then
+    log "ERROR: no files"
+    return 1
+  fi
   local filenames=$(abspaths_to_basenames $files)
   log "  files: ($filenames)"
   PKGS_FILES[$pkg]="$files"
@@ -462,7 +469,10 @@ function go_build() {
   log "[$pkg]"
   log "  dir:$pkgdir"
   local files=$(find_matching_files $pkgdir)
-
+  if [[ -z $files ]]; then
+    log "ERROR: no files"
+    return 1
+  fi
   log "  files:" $files
   PKGS_FILES[$pkg]="$files"
   local pkgs=($(parse_imports $pkgdir $files))
