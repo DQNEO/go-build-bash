@@ -321,7 +321,8 @@ function list_maching_files_in_dir() {
 }
 
 function eval_build_tag() {
-  local matched=$1
+  local f=$1
+  local matched=$2
   if [[ $matched = "ignore" ]]; then
     # ignore
     return 1
@@ -342,7 +343,7 @@ function eval_build_tag() {
     | sed -E "s/(${IS_UNIX}$GOOS|$GOARCH)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
     | sed -E 's/goexperiment\.\w+/false/g' \
-    | sed -E 's/\w+/false/g' \
+    | sed -E 's/[a-zA-Z0-9_\-\.]+/false/g' \
     | sed -E "s/$_TRUE_/true/g" \
     | sed -e 's/!true/false/g' \
     | sed -e 's/!false/true/g' \
@@ -351,7 +352,7 @@ function eval_build_tag() {
     | sed -e 's/^false ||//g' \
     | sed -e 's/^false &&.*/false/g'
   )
-  log "  logical expr: '$matched' => '$logical_expr'"
+  log "    build tag: $f '$matched' => '$logical_expr'"
   eval $logical_expr;
 }
 
@@ -374,7 +375,7 @@ function find_matching_files() {
   for f in $files; {
     local fullpath="$dir/$f"
     local tag=$(get_build_tag $fullpath)
-    if eval_build_tag "$tag"; then
+    if eval_build_tag $f "$tag"; then
       if [[ $fullpath == *.go ]]; then
         gofiles+=($fullpath)
       elif [[ $fullpath == *.s ]]; then
