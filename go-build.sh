@@ -96,6 +96,10 @@ declare -A PKGS_ID=()
 declare -A PKGS_DEPEND=()
 declare -A PKGS_FILES=()
 
+function get_std_pkg_dir() {
+  local pkg=$1
+  echo $GOROOT/src/$pkg
+}
 
 function parse_imports() {
   local dir=$1
@@ -287,37 +291,6 @@ function append_asm() {
   $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
 }
 
-## Final output
-function do_link() {
-  local pkg=main
-  local wdir=$WORK/${PKGS_ID[$pkg]}
-  local pkgsfiles=""
-  for p in "${!PKGS_ID[@]}"; {
-    pkgsfiles="${pkgsfiles}packagefile ${p}=$WORK/${PKGS_ID[$p]}/_pkg_.a
-"
-  }
-  cat >$wdir/importcfg.link <<EOF # internal
-packagefile github.com/DQNEO/go-samples/birudo=$wdir/_pkg_.a
-$pkgsfiles
-modinfo "0w\xaf\f\x92t\b\x02A\xe1\xc1\a\xe6\xd6\x18\xe6path\tgithub.com/DQNEO/go-samples/birudo\nmod\tgithub.com/DQNEO/go-samples/birudo\t(devel)\t\nbuild\t-buildmode=exe\nbuild\t-compiler=gc\nbuild\tCGO_ENABLED=0\nbuild\tGOARCH=amd64\nbuild\tGOOS=linux\nbuild\tGOAMD64=v1\nbuild\tvcs=git\nbuild\tvcs.revision=a721858f4c22cb178c3f3853f9c55aa3773afc2c\nbuild\tvcs.time=2023-06-02T12:08:04Z\nbuild\tvcs.modified=true\n\xf92C1\x86\x18 r\x00\x82B\x10A\x16\xd8\xf2"
-EOF
-
-  mkdir -p $wdir/exe/
-  cd .
-  $TOOL_DIR/link -o $wdir/exe/a.out -importcfg $wdir/importcfg.link -buildmode=exe -buildid=yekYyg_HZMgX517VPpiO/aHxht5d7JGm1qJULUhhT/ct0PU8-vieH10gtMxGeC/yekYyg_HZMgX517VPpiO -extld=cc $wdir/_pkg_.a
-  log "$TOOL_DIR/link -o $wdir/exe/a.out -importcfg $wdir/importcfg.link -buildmode=exe -buildid=yekYyg_HZMgX517VPpiO/aHxht5d7JGm1qJULUhhT/ct0PU8-vieH10gtMxGeC/yekYyg_HZMgX517VPpiO -extld=cc $wdir/_pkg_.a"
-
-  $TOOL_DIR/buildid -w $wdir/exe/a.out
-  mv $wdir/exe/a.out $OUT_FILE
-
-  log ""
-  log "#"
-  log "# Moving the binary executable"
-  log "#"
-  log mv $wdir/exe/a.out $OUT_FILE
-
-}
-
 NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris"
 NON_GOARCH_LIST='386|arm[^_]*|loong64|mips[^_]*|ppc64[^_]*|riscv[^_]*|ppc|s390[^_]*|sparc[^_]*|wasm'
 
@@ -451,7 +424,7 @@ function find_depends() {
     fi
   else
     log "  assuming std package"
-    pkgdir=$GOROOT/src/$pkg
+    pkgdir=$(get_std_pkg_dir $pkg)
   fi
 
   if [[ ! -e $pkgdir ]]; then
@@ -477,9 +450,35 @@ function find_depends() {
   }
 }
 
-function get_std_pkg_dir() {
-  local pkg=$1
-  echo $GOROOT/src/$pkg
+
+# Make a binary executable
+function do_link() {
+  local pkg=main
+  local wdir=$WORK/${PKGS_ID[$pkg]}
+  local pkgsfiles=""
+  for p in "${!PKGS_ID[@]}"; {
+    pkgsfiles="${pkgsfiles}packagefile ${p}=$WORK/${PKGS_ID[$p]}/_pkg_.a
+"
+  }
+  cat >$wdir/importcfg.link <<EOF # internal
+packagefile github.com/DQNEO/go-samples/birudo=$wdir/_pkg_.a
+$pkgsfiles
+modinfo "0w\xaf\f\x92t\b\x02A\xe1\xc1\a\xe6\xd6\x18\xe6path\tgithub.com/DQNEO/go-samples/birudo\nmod\tgithub.com/DQNEO/go-samples/birudo\t(devel)\t\nbuild\t-buildmode=exe\nbuild\t-compiler=gc\nbuild\tCGO_ENABLED=0\nbuild\tGOARCH=amd64\nbuild\tGOOS=linux\nbuild\tGOAMD64=v1\nbuild\tvcs=git\nbuild\tvcs.revision=a721858f4c22cb178c3f3853f9c55aa3773afc2c\nbuild\tvcs.time=2023-06-02T12:08:04Z\nbuild\tvcs.modified=true\n\xf92C1\x86\x18 r\x00\x82B\x10A\x16\xd8\xf2"
+EOF
+
+  mkdir -p $wdir/exe/
+  cd .
+  $TOOL_DIR/link -o $wdir/exe/a.out -importcfg $wdir/importcfg.link -buildmode=exe -buildid=yekYyg_HZMgX517VPpiO/aHxht5d7JGm1qJULUhhT/ct0PU8-vieH10gtMxGeC/yekYyg_HZMgX517VPpiO -extld=cc $wdir/_pkg_.a
+  log "$TOOL_DIR/link -o $wdir/exe/a.out -importcfg $wdir/importcfg.link -buildmode=exe -buildid=yekYyg_HZMgX517VPpiO/aHxht5d7JGm1qJULUhhT/ct0PU8-vieH10gtMxGeC/yekYyg_HZMgX517VPpiO -extld=cc $wdir/_pkg_.a"
+
+  $TOOL_DIR/buildid -w $wdir/exe/a.out
+  mv $wdir/exe/a.out $OUT_FILE
+
+  log ""
+  log "#"
+  log "# Moving the binary executable"
+  log "#"
+  log mv $wdir/exe/a.out $OUT_FILE
 }
 
 # main procedure
@@ -507,7 +506,7 @@ function go_build() {
     # stdlib style: "foo/bar"
     log "assuming std package"
     buildmode=archive
-    pkgdir=$GOROOT/src/$pkgpath
+    pkgdir=$(get_std_pkg_dir $pkgpath)
     toplevelpkg=$pkgpath
   fi
 
