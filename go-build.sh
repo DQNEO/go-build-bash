@@ -485,14 +485,14 @@ function go_build() {
   local sorted_pkgs=$(sort_pkgs $WORK/depends.txt | grep -v -E '^main$')
 
   # Assign package ID number
-  PKGS_ID["main"]="001"
   local id=2
   for pkg in $sorted_pkgs; {
     id_string=$(printf "%03d" $id)
     PKGS_ID[$pkg]=$id_string
-    id=$((id + 1))
     log "[$id_string] $pkg"
+    id=$((id + 1))
   }
+  PKGS_ID["main"]="001"
   log "[001] main"
 
   log ""
