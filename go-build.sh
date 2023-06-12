@@ -59,7 +59,7 @@ else
 fi
 
 NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris"
-NON_GOARCH_LIST='386|arm.*|loong64|mips.*|ppc64.*|riscv.*|ppc|s390.*|sparc.*|wasm'
+NON_GOARCH_LIST='386|arm[^_]*|loong64|mips[^_]*|ppc64[^_]*|riscv[^_]*|ppc|s390[^_]*|sparc[^_]*|wasm'
 
 # Parse go.mod
 if [[ -e go.mod ]]; then
@@ -314,7 +314,10 @@ EOF
 
 function list_maching_files_in_dir() {
   local dir=$1
-  find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n" |
+  local allfiles=$(find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n")
+  local ary=($allfiles)
+  log "  allfiles=(${ary[@]})"
+  echo "$allfiles" |\
     grep -v -E '_test\.go' |
     grep -v -E 'go_below_11.\.go' |
     grep -v -E "_(${NON_GOOS_LIST})(\.|_)" |
@@ -341,7 +344,7 @@ function eval_build_tag() {
 
   logical_expr=$(
     echo $matched \
-    | sed -E "s/(${IS_UNIX}$GOOS|$GOARCH)/$_TRUE_/g" \
+    | sed -E "s/(${IS_UNIX}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
     | sed -E 's/goexperiment\.\w+/false/g' \
     | sed -E 's/[a-zA-Z0-9_\-\.]+/false/g' \
