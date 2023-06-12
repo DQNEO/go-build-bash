@@ -105,7 +105,7 @@ function parse_imports() {
       grep --only-matching --no-filename -E '~import\s*\([^\)]*\)'
 
     cat $tmpfile |
-      grep --only-matching --no-filename -E '~import\s*"[^"]+"'
+      grep --only-matching --no-filename -E '~import\s*[^"]*"[^"]+"'
   ) |
     grep -E --only-matching '\"[^\"]+\"' |
     grep -v '"unsafe"' | tr -d '"' | sort | uniq
