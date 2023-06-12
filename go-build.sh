@@ -315,7 +315,8 @@ EOF
 function list_maching_files_in_dir() {
   local dir=$1
   find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n" |
-    grep -v -E '_test.go' |
+    grep -v -E '_test\.go' |
+    grep -v -E 'go_below_11.\.go' |
     grep -v -E "_(${NON_GOOS_LIST})(\.|_)" |
     grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
 }
@@ -372,10 +373,11 @@ function find_matching_files() {
   local gofiles=()
   local asfiles=()
 
+  local f
   for f in $files; {
     local fullpath="$dir/$f"
     local tag=$(get_build_tag $fullpath)
-    if eval_build_tag $f "$tag"; then
+    if eval_build_tag "$f" "$tag"; then
       if [[ $fullpath == *.go ]]; then
         gofiles+=($fullpath)
       elif [[ $fullpath == *.s ]]; then
