@@ -409,9 +409,13 @@ function abspaths_to_basenames() {
 
 function find_depends() {
   local pkg=$1
+  local used_from=$2
   if [ -v 'PKGS_DEPEND[$pkg]' ]; then
     return
   fi
+
+  log "[$pkg]"
+  log "  used from:" $used_from
 
   log "  finding package location ..."
   local pkgdir=""
@@ -457,9 +461,7 @@ function find_depends() {
   log "  "
   PKGS_DEPEND[$pkg]="${pkgs[@]}"
   for _pkg in "${pkgs[@]}"; {
-    log "[$_pkg]"
-    log "  used from:" $pkg
-    find_depends $_pkg
+    find_depends $_pkg $pkg
   }
 }
 
@@ -490,12 +492,10 @@ function go_build() {
   PKGS_FILES[$pkg]="$files"
   local pkgs=($(parse_imports $pkgdir $files))
   log "  imports:(${pkgs[@]})"
-  PKGS_DEPEND[$pkg]="${pkgs[@]}"
   log "  "
+  PKGS_DEPEND[$pkg]="${pkgs[@]}"
   for _pkg in "${pkgs[@]}"; {
-    log "[$_pkg]"
-    log "  used from:" $pkg
-    find_depends $_pkg
+    find_depends $_pkg $pkg
   }
 
   dump_depend_tree >$WORK/depends.txt
