@@ -364,7 +364,7 @@ function get_build_tag() {
 }
 
 
-function find_files_in_dir() {
+function find_matching_files() {
   local dir=$1
   local files=$(list_maching_files_in_dir $dir)
   local gofiles=()
@@ -431,7 +431,7 @@ function find_depends() {
 
   log "[$pkg]"
   log "  dir:$pkgdir"
-  local files=$(find_files_in_dir $pkgdir)
+  local files=$(find_matching_files $pkgdir)
   local filenames=$(abspaths_to_basenames $files)
   log "  files: ($filenames)"
   PKGS_FILES[$pkg]="$files"
@@ -461,7 +461,7 @@ function go_build() {
   local pkgdir=$main_dir
   log "[$pkg]"
   log "  dir:$pkgdir"
-  local files=$(find_files_in_dir $pkgdir)
+  local files=$(find_matching_files $pkgdir)
 
   log "  files:" $files
   PKGS_FILES[$pkg]="$files"
