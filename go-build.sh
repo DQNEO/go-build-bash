@@ -67,6 +67,12 @@ if [[ -e go.mod ]]; then
 fi
 
 # Parse argv
+
+
+# go help buildmode:
+#	Listed main packages are built into executables and listed
+#	non-main packages are built into .a files (the default
+#	behavior).
 main_dir="."
 OUT_FILE=$(basename $MAIN_MODULE)
 if (( $# >= 1 )); then
