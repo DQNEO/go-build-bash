@@ -351,6 +351,7 @@ function eval_build_tag() {
     | sed -e 's/^false ||//g' \
     | sed -e 's/^false &&.*/false/g'
   )
+  log "  logical expr: '$matched' => '$logical_expr'"
   eval $logical_expr;
 }
 
@@ -409,21 +410,28 @@ function find_depends() {
     return
   fi
 
+  log "  finding package location ..."
   local pkgdir=""
   if [[ $pkg =~ \. ]]; then
     : # non-std lib
-    log "detected non-std lib: pkg=$pkg"
     if [[ $pkg = ${MAIN_MODULE}/* ]]; then
+      log "  assuming in-module package"
       relpath=${pkg#${MAIN_MODULE}}
       log "relpath=$relpath"
       pkgdir=${main_dir}${relpath}
+    elif [[ $pkg = golang.org/x/* ]]; then
+      log "  assuming sub std package"
+      if [[ -e ./vendor/${pkg} ]]; then
+        pkgdir=./vendor/${pkg}
+      else
+        pkgdir=$GOROOT/src/vendor/$pkg
+      fi
     else
-      log "implement me"
-      return 1
+      log "  assuming vendor package"
+      pkgdir=./vendor/${pkg}
     fi
-
   else
-    : # std lib
+    log "  assuming std package"
     pkgdir=$GOROOT/src/$pkg
   fi
 
@@ -432,7 +440,6 @@ function find_depends() {
     return 1
   fi
 
-  log "[$pkg]"
   log "  dir:$pkgdir"
   local files=$(find_matching_files $pkgdir)
   if [[ -z $files ]]; then
@@ -444,8 +451,11 @@ function find_depends() {
   PKGS_FILES[$pkg]="$files"
   local pkgs=($(parse_imports $pkgdir $files))
   log "  imports:(${pkgs[@]})"
+  log "  "
   PKGS_DEPEND[$pkg]="${pkgs[@]}"
   for _pkg in "${pkgs[@]}"; {
+    log "[$_pkg]"
+    log "  used from:" $pkg
     find_depends $_pkg
   }
 }
@@ -478,7 +488,10 @@ function go_build() {
   local pkgs=($(parse_imports $pkgdir $files))
   log "  imports:(${pkgs[@]})"
   PKGS_DEPEND[$pkg]="${pkgs[@]}"
+  log "  "
   for _pkg in "${pkgs[@]}"; {
+    log "[$_pkg]"
+    log "  used from:" $pkg
     find_depends $_pkg
   }
 
