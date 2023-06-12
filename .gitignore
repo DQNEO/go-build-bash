@@ -3,3 +3,5 @@
 /tmp/
 hello.linux
 hello.mac
+/go.sum
+/vendor
