@@ -484,17 +484,39 @@ function get_std_pkg_dir() {
 
 # main procedure
 function go_build() {
-  local pkg="main"
-  local pkgdir=$1
-
-  rm -f $OUT_FILE
   mkdir -p $WORK
+  rm -f $OUT_FILE
 
+  local pkgpath=$1
+  local pkgdir=""
+  local toplevelpkg=""
+  local buildmode=""
+
+  log "pkgpath='$pkgpath'"
+  if [[ $pkgpath == "." ]] || [[ $pkgpath == \.* ]]; then
+    # relative path
+    log "assuming main package"
+    buildmode=exe
+    pkgdir=$pkgpath
+    toplevelpkg="main"
+  elif [[ $pkgpath =~ \. ]]; then
+    # url like path
+    log "[ERROR] unsupported path"
+    return 1
+  else
+    # stdlib style: "foo/bar"
+    log "assuming std package"
+    buildmode=archive
+    pkgdir=$GOROOT/src/$pkgpath
+    toplevelpkg=$pkgpath
+  fi
+
+  log "buildmode=$buildmode"
   log ""
   log "#"
   log "# Finding files"
   log "#"
-  log "[$pkg]"
+  log "[$toplevelpkg]"
   log "  dir:$pkgdir"
   local files=$(find_matching_files $pkgdir)
   if [[ -z $files ]]; then
@@ -502,13 +524,13 @@ function go_build() {
     return 1
   fi
   log "  files:" $files
-  PKGS_FILES[$pkg]="$files"
+  PKGS_FILES[$toplevelpkg]="$files"
   local pkgs=($(parse_imports $pkgdir $files))
   log "  imports:(${pkgs[@]})"
   log "  "
-  PKGS_DEPEND[$pkg]="${pkgs[@]}"
+  PKGS_DEPEND[$toplevelpkg]="${pkgs[@]}"
   for _pkg in "${pkgs[@]}"; {
-    find_depends $_pkg $pkg
+    find_depends $_pkg $toplevelpkg
   }
 
   dump_depend_tree >$WORK/depends.txt
@@ -521,7 +543,7 @@ function go_build() {
   log "#"
   log "# Sorting dependency tree"
   log "#"
-  local sorted_pkgs=$(sort_pkgs $WORK/depends.txt | grep -v -E '^main$')
+  local sorted_pkgs=$(sort_pkgs $WORK/depends.txt | grep -v -E "^${toplevelpkg}\$")
 
   # Assign package ID number
   local id=2
@@ -531,8 +553,8 @@ function go_build() {
     log "[$id_string] $pkg"
     id=$((id + 1))
   }
-  PKGS_ID["main"]="001"
-  log "[001] main"
+  PKGS_ID[$toplevelpkg]="001"
+  log "[001] $toplevelpkg"
 
   log ""
   log "#"
@@ -546,13 +568,15 @@ function go_build() {
   log "#"
   log "# Compiling the main package"
   log "#"
-  build_pkg "main" ${PKGS_FILES["main"]}
+  build_pkg $toplevelpkg ${PKGS_FILES[$toplevelpkg]}
 
-  log ""
-  log "#"
-  log "# Linking all packages into a binary executable"
-  log "#"
-  do_link
+  if [[ $buildmode = "exe" ]]; then
+    log ""
+    log "#"
+    log "# Linking all packages into a binary executable"
+    log "#"
+    do_link
+  fi
 }
 
-go_build $ARG
+go_build "$ARG"
