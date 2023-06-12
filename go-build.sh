@@ -4,12 +4,8 @@
 #
 set -eu
 
-debug="true" # true or false
-function log() {
-  if eval $debug; then
-    echo "$@" >/dev/stderr
-  fi
-}
+WORK=/tmp/go-build-bash/$(date +%s)
+BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
 
 GOROOT=$(go env GOROOT)
 GOVERSION=$(go env GOVERSION)
@@ -23,31 +19,6 @@ if [[ ( ! -v GOOS ) || -z $GOOS ]]; then
   GOOS=$(go env GOHOSTOS)
 fi
 
-
-WORK=/tmp/go-build-bash/$(date +%s)
-BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
-
-# Associative arrays to manage properties of each package
-declare -A PKGS_ID=()
-declare -A PKGS_DEPEND=()
-declare -A PKGS_FILES=()
-
-# Detect OS type
-if [[ $OSTYPE == "darwin"* ]]; then
-  if ! which gfind >/dev/null || ! which gsed >/dev/null; then
-    "gfind and gsed commands are required. Please try 'brew install findutils gnu-sed'" >/dev/stderr
-    exit 1
-  fi
-  shopt -s expand_aliases
-  alias find=gfind
-  alias sed=gsed
-elif [[ $OSTYPE == "linux"* ]]; then
-  :
-fi
-
-ASM_D_GOOS=GOOS_${GOOS}
-ASM_D_GOARCH=GOARCH_${GOARCH}
-
 # TODO: Stop prohibited list style and use allowed list instead
 if  [[ $GOOS = "darwin" ]]; then
   NON_GOOS="linux"
@@ -58,8 +29,20 @@ else
   exit 1
 fi
 
-NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris"
-NON_GOARCH_LIST='386|arm[^_]*|loong64|mips[^_]*|ppc64[^_]*|riscv[^_]*|ppc|s390[^_]*|sparc[^_]*|wasm'
+ASM_D_GOOS=GOOS_${GOOS}
+ASM_D_GOARCH=GOARCH_${GOARCH}
+
+# Use gnu tools for MacOS
+if [[ $OSTYPE == "darwin"* ]]; then
+  if ! which gfind >/dev/null || ! which gsed >/dev/null; then
+    "gfind and gsed commands are required. Please try 'brew install findutils gnu-sed'" >/dev/stderr
+    exit 1
+  fi
+  shopt -s expand_aliases
+  alias find=gfind
+  alias sed=gsed
+fi
+
 
 # Parse go.mod
 if [[ -e go.mod ]]; then
@@ -67,7 +50,6 @@ if [[ -e go.mod ]]; then
 fi
 
 # Parse argv
-
 
 # go help buildmode:
 #	Listed main packages are built into executables and listed
@@ -87,6 +69,13 @@ if (( $# >= 1 )); then
   fi
 fi
 
+debug="true" # true or false
+function log() {
+  if eval $debug; then
+    echo "$@" >/dev/stderr
+  fi
+}
+
 log "#"
 log "# Initial settings"
 log "#"
@@ -96,6 +85,12 @@ log "main module:" $MAIN_MODULE
 log "main directory:" $main_dir
 log "out file:" $OUT_FILE
 log "work dir:" $WORK
+
+# Associative arrays to manage properties of each package
+declare -A PKGS_ID=()
+declare -A PKGS_DEPEND=()
+declare -A PKGS_FILES=()
+
 
 function parse_imports() {
   local dir=$1
@@ -317,6 +312,9 @@ EOF
   log mv $wdir/exe/a.out $OUT_FILE
 
 }
+
+NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris"
+NON_GOARCH_LIST='386|arm[^_]*|loong64|mips[^_]*|ppc64[^_]*|riscv[^_]*|ppc|s390[^_]*|sparc[^_]*|wasm'
 
 function list_maching_files_in_dir() {
   local dir=$1
