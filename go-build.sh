@@ -133,16 +133,17 @@ function build_pkg() {
   mkdir -p $wdir/
 
   local gofiles=""
-  local afiles=""
+  local asmfiles=""
   local gobasenames=() # for logging
 
+  # Split given files into .go and .s groups
   for f in ${filenames[@]}; {
     local file=$f
     if [[ $f == *.go ]]; then
       gofiles="$gofiles $file"
       gobasenames+=($(basename $file))
     elif [[ $f == *.s ]]; then
-      afiles="$afiles $file"
+      asmfiles="$asmfiles $file"
     else
       echo "ERROR" >/dev/stderr
       exit 1
@@ -161,11 +162,11 @@ function build_pkg() {
   if [[ ! $pkg =~ \. ]] && [[ $pkg != "main" ]]; then
     std="1"
   fi
-  if [[ -n $afiles ]]; then
+  if [[ -n $asmfiles ]]; then
     if [[ "$std" = "1" ]]; then
       touch $wdir/go_asm.h
     fi
-    gen_symabis $pkg $afiles
+    gen_symabis $pkg $asmfiles
     asmopts="-symabis $wdir/symabis -asmhdr $wdir/go_asm.h"
   fi
 
@@ -174,7 +175,7 @@ function build_pkg() {
   fi
 
   complete="1"
-  if [[ -n $afiles ]]; then
+  if [[ -n $asmfiles ]]; then
     complete="0"
   fi
   if [[ "$std" = "1" ]]; then
@@ -203,8 +204,8 @@ function build_pkg() {
   log "  compile option:" $compile_opts
   log "  compiling: (${gobasenames[@]})"
   $TOOL_DIR/compile $compile_opts $gofiles
-  if [[ -n $afiles ]]; then
-    append_asm $pkg $afiles
+  if [[ -n $asmfiles ]]; then
+    append_asm $pkg $asmfiles
   fi
   $TOOL_DIR/buildid -w $wdir/_pkg_.a # internal
 }
