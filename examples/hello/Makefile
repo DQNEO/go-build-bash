@@ -11,13 +11,13 @@ hello.linux: *.go $(gobuild) Makefile
 
 .PHONEY: test-on-mac
 # test both binaries
-test-on-mac:  all
+test-on-mac: hello.mac hello.linux
 	./hello.mac
 	docker run --rm -v `pwd`:/mnt/ -w /mnt busybox ./hello.linux
 
 .PHONEY: test-on-linux
 # test on a linux host machine
-test-on-linux: all
+test-on-linux: hello.mac hello.linux
 	file ./hello.mac
 	./$<
 
