@@ -132,7 +132,7 @@ function list_maching_files_in_dir() {
 }
 
 function eval_build_tag() {
-  local f=$1
+  local f=$1 # for logging
   local matched=$2
   if [[ $matched = "ignore" ]]; then
     # ignore
@@ -151,6 +151,7 @@ function eval_build_tag() {
 
   logical_expr=$(
     echo $matched \
+    | sed -E "s/boringcrypto/false/g" \
     | sed -E "s/(${IS_UNIX}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
     | sed -E 's/goexperiment\.\w+/false/g' \
@@ -176,7 +177,11 @@ function get_build_tag() {
   echo $matched
 }
 
-
+function debug_build_tag() {
+  local f=$1
+  local tag=$(get_build_tag $f)
+  eval_build_tag "$f" "$tag" && echo "true"
+}
 function find_matching_files() {
   local dir=$1
   local files=$(list_maching_files_in_dir $dir)
@@ -688,10 +693,13 @@ if (( $# >= 1 )); then
     # /usr/local/opt/go/libexec/src/crypto/internal/nistec/p256_asm.go
     # ./examples/kubectl/vendor/k8s.io/kubectl/pkg/util/i18n/i18n.go
     # ./examples/kubectl/vendor/k8s.io/kubectl/pkg/explain/v2/template.go
-    declare debug_embed_filepath=$2
+    declare debug_embed_filepath=$2 # pass a go file
     declare debug_embed_dir=$(dirname $debug_embed_filepath)
     process_embed $debug_embed_dir $debug_embed_filepath
     exit 0
+  elif [[ $1 = "--debug-tag" ]]; then
+    debug_build_tag $2 # pass a go file
+    exit
   fi
 fi
 
