@@ -9,12 +9,12 @@ The purpose of this project is to help go users learn how `go build` works.
 ## Host machine
 * Bash 5.1 or later
 * go version 1.20
-* (On MacOS) `brew install findutils gnu-sed`
 * OS:MacOS or Linux
+* (On MacOS) `brew install bash findutils gnu-sed`
 * CPU:x86-64
 
 ## Target machine
-* Linux x86-64 or MacOS
+* Linux or MacOS of x86-64
 
 4 combinations of cross OS building (Host: darwin,linux) => (Target: darwin,linux) are supported.
 
