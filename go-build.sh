@@ -116,10 +116,21 @@ function sort_pkgs() {
   done
 }
 
+# Build a package
 function build_pkg() {
   pkg=$1
   shift
   local filenames=($@)
+
+  log ""
+  log "[$pkg]"
+  log "  source:" $(dirname ${filenames[0]})
+
+  # Create a work directory to build the package
+  # All outputs are stored into this directory
+  local wdir=$WORK/${PKGS_ID[$pkg]}
+  log "  mkdir -p $wdir/"
+  mkdir -p $wdir/
 
   local gofiles=""
   local afiles=""
@@ -138,12 +149,6 @@ function build_pkg() {
     fi
   }
 
-  local wdir=$WORK/${PKGS_ID[$pkg]}
-  log ""
-  log "[$pkg]"
-  log "  source:" $(dirname ${filenames[0]})
-  log "  mkdir -p $wdir/"
-  mkdir -p $wdir/
   make_importcfg $pkg
 
   local asmopts=""
