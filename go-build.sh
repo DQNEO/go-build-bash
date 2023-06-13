@@ -150,6 +150,8 @@ function build_pkg() {
     fi
   }
 
+  # Make an importcfg file.
+  # It contains a list of packages this package imports
   make_importcfg $pkg
 
   local asmopts=""
