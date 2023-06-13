@@ -525,6 +525,10 @@ function go_build() {
   log "  files:" $files
   PKGS_FILES[$toplevelpkg]="$files"
   local pkgs=($(parse_imports $pkgdir $files))
+  if [[ $toplevelpkg == "main" && ${#pkgs[@]} -eq 0 ]]; then
+    # insert runtime
+    pkgs[0]="runtime"
+  fi
   log "  imports:(${pkgs[@]})"
   log "  "
   PKGS_DEPEND[$toplevelpkg]="${pkgs[@]}"
