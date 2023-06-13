@@ -9,14 +9,16 @@ hello.mac: *.go $(gobuild) Makefile
 hello.linux: *.go $(gobuild) Makefile
 	GOOS=linux GOARCH=amd64 $(gobuild) -o $@
 
-.PHONEY: test
-# test on a non-linux host machine
-test: hello.linux
-	docker run --rm -v `pwd`:/mnt/ -w /mnt busybox ./$<
+.PHONEY: test-on-mac
+# test both binaries
+test-on-mac:  all
+	./hello.mac
+	docker run --rm -v `pwd`:/mnt/ -w /mnt busybox ./hello.linux
 
 .PHONEY: test-on-linux
 # test on a linux host machine
-test-on-linux: hello.linux
+test-on-linux: all
+	file ./hello.mac
 	./$<
 
 # build for the host machine as the target
