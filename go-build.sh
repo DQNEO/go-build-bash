@@ -119,13 +119,13 @@ function sort_pkgs() {
 function build_pkg() {
   pkg=$1
   shift
-  filenames="$@"
+  local filenames=($@)
 
   local gofiles=""
   local afiles=""
   local gobasenames=() # for logging
 
-  for f in $filenames; {
+  for f in ${filenames[@]}; {
     local file=$f
     if [[ $f == *.go ]]; then
       gofiles="$gofiles $file"
@@ -141,6 +141,7 @@ function build_pkg() {
   local wdir=$WORK/${PKGS_ID[$pkg]}
   log ""
   log "[$pkg]"
+  log "  source:" $(dirname ${filenames[0]})
   log "  mkdir -p $wdir/"
   mkdir -p $wdir/
   make_importcfg $pkg
