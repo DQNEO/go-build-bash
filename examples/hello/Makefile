@@ -18,8 +18,8 @@ test-on-mac: hello.mac hello.linux
 .PHONEY: test-on-linux
 # test on a linux host machine
 test-on-linux: hello.mac hello.linux
+	./hello.linux
 	file ./hello.mac
-	./$<
 
 # build for the host machine as the target
 hello.bin: *.go $(gobuild) Makefile
