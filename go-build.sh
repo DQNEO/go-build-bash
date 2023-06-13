@@ -460,6 +460,10 @@ function go_build() {
     buildmode=exe
     pkgdir=$pkgpath
     toplevelpkg="main"
+    if [[ -z $OUT_FILE ]]; then
+      OUT_FILE=$(basename $MAIN_MODULE)
+    fi
+
   elif [[ $pkgpath =~ \. ]]; then
     # url like path
     log "[ERROR] unsupported path"
@@ -545,7 +549,7 @@ function go_build() {
 }
 
 # Parse go.mod
-declare MAIN_MODULE
+declare MAIN_MODULE=""
 declare MAIN_MODULE_DIR=$(pwd)
 if [[ -e go.mod ]]; then
   MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
@@ -557,7 +561,7 @@ fi
 #	Listed main packages are built into executables and listed
 #	non-main packages are built into .a files (the default
 #	behavior).
-OUT_FILE=$(basename $MAIN_MODULE)
+declare OUT_FILE=""
 if (( $# >= 1 )); then
   if [[ $1 == "-o" ]]; then
     shift
