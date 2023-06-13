@@ -127,6 +127,7 @@ function list_maching_files_in_dir() {
   echo "$allfiles" |\
     grep -v -E '_test\.go' |
     grep -v -E 'go_below_11.\.go' |
+    grep -v -E 'ct_win.go' | # // https://github.com/daviddengcn/go-colortext/blob/master/ct_win.go#L1
     grep -v -E "_(${NON_GOOS_LIST})(\.|_)" |
     grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
 }
@@ -699,6 +700,9 @@ if (( $# >= 1 )); then
     exit 0
   elif [[ $1 = "--debug-tag" ]]; then
     debug_build_tag $2 # pass a go file
+    exit
+  elif [[ $1 = "--debug-find-files" ]]; then
+    find_matching_files $2 # pass a directory
     exit
   fi
 fi
