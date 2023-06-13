@@ -275,6 +275,7 @@ function find_depends() {
   }
 }
 
+
 # Make an importcfg file.
 # It contains a list of packages this package directly imports
 function make_importcfg() {
@@ -293,6 +294,113 @@ function make_importcfg() {
   awk '{$1="      "$1}1' <$cfgfile >/dev/stderr
   log "      ----"
 }
+
+function process_embed() {
+  log "------ check embed -------"
+  local dir=$1
+  local cfgfile=$2
+  shift; shift;
+  local gofiles=$@
+  log "gofiles=$gofiles"
+  local matched=$(cat $gofiles | grep -E --only-matching --no-filename '^\s*//go:embed .*'  | sed -e 's#//go:embed ##g' | sed -e 's#//.*##g')
+  log " embed matched:" $matched
+  if [[ -z $matched ]]; then
+    return
+  fi
+  local pattern=""
+  local -A fileToPath=()
+  local -A patterns=() # 'pattern' => '"file1","file2",...'
+  local additional=""
+  for pattern in $matched ; {
+    # pattern is either a filename, dirname or glob
+    log "  embed_pattern=$pattern"
+    local path=$dir/$pattern
+    if [[ -f $path ]]; then
+      log "  type=file, path=$path"
+      local filepath=$(realpath $path)
+      patterns[$pattern]="\"$pattern\""
+      fileToPath[$pattern]=$filepath
+    elif [[ -d $path ]]; then
+      log "  embed type=dir"
+      local files=$(find $path -type f  -not -name test -printf " %P")
+      log "  files=$files"
+      additional=""
+      local pttrns=""
+      for f in $files; {
+        log "    f=" $f
+        local relname=$pattern/$f
+        log "    rel=" $relname
+        fileToPath[$relname]=$(realpath $path/$f)
+        local comma=""
+        if [[ -z $additional ]]; then
+          additional="1"
+        else
+          comma=","
+        fi
+        pttrns="${pttrns}${comma}\"$relname\""
+      }
+      patterns[$pattern]=$pttrns
+    elif [[ $path =~ \* ]]; then
+      log "  embed type=glob"
+      local expanded_files=$(echo $path)
+      log " expanded=(" $expanded_files ")"
+      additional=""
+      local pttrns=""
+      for f in "$expanded_files"; {
+        log "    f=" $f
+        local relname=${f##$dir/}
+        log "    rel=" $relname
+        fileToPath[$relname]=$(realpath $f)
+        local comma=""
+        if [[ -z $additional ]]; then
+          additional="1"
+        else
+          comma=","
+        fi
+        pttrns="${pttrns}${comma}\"$relname\""
+      }
+      patterns[$pattern]=$pttrns
+    else
+      log "[ERROR] unexpected embed entity"
+      return 1
+    fi
+  }
+
+  # output json
+  {
+
+      echo "{"
+      echo ' "Patterns": {'
+      for pattern in ${!patterns[@]} ; {
+        if [[ -z $additional ]]; then
+          additional="1"
+        else
+          echo -n ","
+        fi
+        echo "  \"$pattern\": ["
+        echo "     ${patterns[$pattern]}"
+        echo "   ]"
+      }
+      echo '  },'
+
+      echo ' "Files": {'
+      additional=""
+      for f in ${!fileToPath[@]} ; {
+        if [[ -z $additional ]]; then
+          additional="1"
+        else
+          echo -n ","
+        fi
+
+        echo "  \"$f\":\"${fileToPath[$f]}\""
+      }
+
+      echo '  }'
+      echo "}"
+    } > $cfgfile
+
+}
+
 
 function gen_symabis() {
   pkg=$1
@@ -331,10 +439,11 @@ function build_pkg() {
   pkg=$1
   shift
   local filenames=($@)
+  local pkgdir=$(dirname ${filenames[0]})
 
   log ""
   log "[$pkg]"
-  log "  source:" $(dirname ${filenames[0]})
+  log "  source:" $pkgdir
 
   # Create a work directory to build the package
   # All outputs are stored into this directory
@@ -362,6 +471,9 @@ function build_pkg() {
 
   make_importcfg $wdir/importcfg ${PKGS_DEPEND[$pkg]}
 
+  embedcfg=$wdir/embedcfg
+  process_embed $pkgdir $embedcfg $gofiles
+
   # Preparing compile options
   local asmopts=""
   local sruntime=""
@@ -369,6 +481,7 @@ function build_pkg() {
   local std=""
   local sstd=""
   local slang=""
+  local sembed=""
 
   if [[ ! $pkg =~ \. ]] && [[ $pkg != "main" ]]; then
     std="1"
@@ -407,9 +520,12 @@ function build_pkg() {
     slang="-lang=go1.20"
   fi
 
+  if [[ -f $embedcfg ]]; then
+    sembed="-embedcfg $embedcfg"
+  fi
   local pkgopts="-p $pkg -o $wdir/_pkg_.a\
  -trimpath \"$wdir=>\"\
- -buildid $BUILD_ID -goversion $GOVERSION -importcfg $wdir/importcfg $sruntime $scomplete $sstd $slang $asmopts"
+ -buildid $BUILD_ID -goversion $GOVERSION -importcfg $wdir/importcfg $sembed $sruntime $scomplete $sstd $slang $asmopts"
 
   local compile_opts="$pkgopts -c=4 -nolocalimports -pack "
   log "  compile option:" $compile_opts
@@ -565,6 +681,20 @@ if [[ -e go.mod ]]; then
 fi
 
 # Parse argv
+# Check special debug flags
+if (( $# >= 1 )); then
+  if [[ $1 = "--debug-embed" ]]; then
+    # examples:
+    # /usr/local/opt/go/libexec/src/crypto/internal/nistec/p256_asm.go
+    # ./examples/kubectl/vendor/k8s.io/kubectl/pkg/util/i18n/i18n.go
+    # ./examples/kubectl/vendor/k8s.io/kubectl/pkg/explain/v2/template.go
+    declare debug_embed_filepath=$2
+    declare debug_embed_dir=$(dirname $debug_embed_filepath)
+    process_embed $debug_embed_dir $debug_embed_filepath
+    exit 0
+  fi
+fi
+
 
 # go help buildmode:
 #	Listed main packages are built into executables and listed
