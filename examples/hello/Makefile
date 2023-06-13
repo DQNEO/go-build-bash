@@ -20,9 +20,9 @@ test-on-linux: hello.linux
 	./$<
 
 # build for the host machine as the target
-hello: *.go $(gobuild) Makefile
+hello.bin: *.go $(gobuild) Makefile
 	$(gobuild) -o $@
 
 .PHONEY: clean
 clean:
-	rm -rf ./hello ./hello.* /tmp/go-build-bash ./go-build-bash
+	rm -rf ./hello.* /tmp/go-build-bash
