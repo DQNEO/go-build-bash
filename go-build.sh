@@ -377,9 +377,7 @@ function build_pkg() {
   # If there is any asm files,
   #  generate a symabis file and pass it to the compile option
   if [[ -n $asmfiles ]]; then
-    if [[ "$std" = "1" ]]; then
-      touch $wdir/go_asm.h
-    fi
+    touch $wdir/go_asm.h
     gen_symabis $pkg $asmfiles
     asmopts="-symabis $wdir/symabis -asmhdr $wdir/go_asm.h"
   fi
