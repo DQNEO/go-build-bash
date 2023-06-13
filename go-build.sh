@@ -116,151 +116,6 @@ function sort_pkgs() {
   done
 }
 
-# Build a package
-function build_pkg() {
-  pkg=$1
-  shift
-  local filenames=($@)
-
-  log ""
-  log "[$pkg]"
-  log "  source:" $(dirname ${filenames[0]})
-
-  # Create a work directory to build the package
-  # All outputs are stored into this directory
-  local wdir=$WORK/${PKGS_ID[$pkg]}
-  log "  mkdir -p $wdir/"
-  mkdir -p $wdir/
-
-  local gofiles=""
-  local asmfiles=""
-  local gobasenames=() # for logging
-
-  # Split given files into .go and .s groups
-  for f in ${filenames[@]}; {
-    local file=$f
-    if [[ $f == *.go ]]; then
-      gofiles="$gofiles $file"
-      gobasenames+=($(basename $file))
-    elif [[ $f == *.s ]]; then
-      asmfiles="$asmfiles $file"
-    else
-      echo "ERROR" >/dev/stderr
-      exit 1
-    fi
-  }
-
-  # Make an importcfg file.
-  # It contains a list of packages this package imports
-  make_importcfg $pkg
-
-  local asmopts=""
-  local sruntime=""
-  local scomplete=""
-  local std=""
-  local sstd=""
-  local slang=""
-
-  if [[ ! $pkg =~ \. ]] && [[ $pkg != "main" ]]; then
-    std="1"
-  fi
-  if [[ -n $asmfiles ]]; then
-    if [[ "$std" = "1" ]]; then
-      touch $wdir/go_asm.h
-    fi
-    gen_symabis $pkg $asmfiles
-    asmopts="-symabis $wdir/symabis -asmhdr $wdir/go_asm.h"
-  fi
-
-  if [[ $pkg = "runtime" ]]; then
-    sruntime="-+"
-  fi
-
-  complete="1"
-  if [[ -n $asmfiles ]]; then
-    complete="0"
-  fi
-  if [[ "$std" = "1" ]]; then
-    # see /usr/local/opt/go/libexec/src/cmd/go/internal/work/gc.go:119
-    if [[ $pkg = "os" || $pkg = "sync" || $pkg = "syscall" || $pkg = "internal/poll" || $pkg = "time" ]]; then
-      complete="0"
-    fi
-  fi
-
-  if [ "$complete" = "1" ]; then
-    scomplete="-complete"
-  fi
-  if [ "$std" = "1" ]; then
-    sstd="-std"
-  fi
-  if [ "$pkg" = "main" ]; then
-    slang="-lang=go1.20"
-  fi
-
-  local otheropts="$sruntime $scomplete $sstd $slang $asmopts "
-  local pkgopts="-p $pkg -o $wdir/_pkg_.a\
- -trimpath \"$wdir=>\"\
- -buildid $BUILD_ID -goversion $GOVERSION -importcfg $wdir/importcfg"
-
-  local compile_opts="$pkgopts $otheropts -c=4 -nolocalimports -pack "
-  log "  compile option:" $compile_opts
-  log "  compiling: (${gobasenames[@]})"
-  $TOOL_DIR/compile $compile_opts $gofiles
-  if [[ -n $asmfiles ]]; then
-    append_asm $pkg $asmfiles
-  fi
-  $TOOL_DIR/buildid -w $wdir/_pkg_.a # internal
-}
-
-function make_importcfg() {
-  pkg=$1
-  wdir=$WORK/${PKGS_ID[$pkg]}
-  local cfgfile=$wdir/importcfg
-  (
-    echo '# import config'
-    for f in ${PKGS_DEPEND[$pkg]}; {
-      echo "packagefile $f=$WORK/${PKGS_ID[$f]}/_pkg_.a"
-    }
-  ) >$cfgfile
-
-  log "  generating the import config file: $cfgfile"
-  log "      ----"
-  awk '{$1="      "$1}1' <$cfgfile >/dev/stderr
-  log "      ----"
-}
-
-function gen_symabis() {
-  pkg=$1
-  shift
-  asfiles="$@"
-  wdir=$WORK/${PKGS_ID[$pkg]}
-  outfile=$wdir/symabis
-  log "  generating the symabis file: $outfile"
-  $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -gensymabis -o $outfile $asfiles
-}
-
-function append_asm() {
-  pkg=$1
-  shift
-  files="$@"
-
-  wdir=$WORK/${PKGS_ID[$pkg]}
-  local ofiles=""
-  local obasenames=() # for logging
-  for f in $files; {
-    local basename=$(basename $f)
-    local baseo=${basename%.s}.o
-    local ofile=$wdir/$baseo
-    log "  assembling: $basename => $baseo"
-    $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -o $ofile $f
-    ofiles="$ofiles $ofile"
-    obasenames+=($baseo)
-  }
-
-  log "  appending object file(s): (${obasenames[@]}) => $wdir/_pkg_.a"
-  $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
-}
-
 NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris"
 NON_GOARCH_LIST='386|arm[^_]*|loong64|mips[^_]*|ppc64[^_]*|riscv[^_]*|ppc|s390[^_]*|sparc[^_]*|wasm'
 
@@ -418,6 +273,151 @@ function find_depends() {
   for _pkg in "${pkgs[@]}"; {
     find_depends $_pkg $pkg
   }
+}
+
+function make_importcfg() {
+  pkg=$1
+  wdir=$WORK/${PKGS_ID[$pkg]}
+  local cfgfile=$wdir/importcfg
+  (
+    echo '# import config'
+    for f in ${PKGS_DEPEND[$pkg]}; {
+      echo "packagefile $f=$WORK/${PKGS_ID[$f]}/_pkg_.a"
+    }
+  ) >$cfgfile
+
+  log "  generating the import config file: $cfgfile"
+  log "      ----"
+  awk '{$1="      "$1}1' <$cfgfile >/dev/stderr
+  log "      ----"
+}
+
+function gen_symabis() {
+  pkg=$1
+  shift
+  asfiles="$@"
+  wdir=$WORK/${PKGS_ID[$pkg]}
+  outfile=$wdir/symabis
+  log "  generating the symabis file: $outfile"
+  $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -gensymabis -o $outfile $asfiles
+}
+
+function append_asm() {
+  pkg=$1
+  shift
+  files="$@"
+
+  wdir=$WORK/${PKGS_ID[$pkg]}
+  local ofiles=""
+  local obasenames=() # for logging
+  for f in $files; {
+    local basename=$(basename $f)
+    local baseo=${basename%.s}.o
+    local ofile=$wdir/$baseo
+    log "  assembling: $basename => $baseo"
+    $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -o $ofile $f
+    ofiles="$ofiles $ofile"
+    obasenames+=($baseo)
+  }
+
+  log "  appending object file(s): (${obasenames[@]}) => $wdir/_pkg_.a"
+  $TOOL_DIR/pack r $wdir/_pkg_.a $ofiles
+}
+
+# Build a package
+function build_pkg() {
+  pkg=$1
+  shift
+  local filenames=($@)
+
+  log ""
+  log "[$pkg]"
+  log "  source:" $(dirname ${filenames[0]})
+
+  # Create a work directory to build the package
+  # All outputs are stored into this directory
+  local wdir=$WORK/${PKGS_ID[$pkg]}
+  log "  mkdir -p $wdir/"
+  mkdir -p $wdir/
+
+  local gofiles=""
+  local asmfiles=""
+  local gobasenames=() # for logging
+
+  # Split given files into .go and .s groups
+  for f in ${filenames[@]}; {
+    local file=$f
+    if [[ $f == *.go ]]; then
+      gofiles="$gofiles $file"
+      gobasenames+=($(basename $file))
+    elif [[ $f == *.s ]]; then
+      asmfiles="$asmfiles $file"
+    else
+      echo "ERROR" >/dev/stderr
+      exit 1
+    fi
+  }
+
+  # Make an importcfg file.
+  # It contains a list of packages this package imports
+  make_importcfg $pkg
+
+  local asmopts=""
+  local sruntime=""
+  local scomplete=""
+  local std=""
+  local sstd=""
+  local slang=""
+
+  if [[ ! $pkg =~ \. ]] && [[ $pkg != "main" ]]; then
+    std="1"
+  fi
+  if [[ -n $asmfiles ]]; then
+    if [[ "$std" = "1" ]]; then
+      touch $wdir/go_asm.h
+    fi
+    gen_symabis $pkg $asmfiles
+    asmopts="-symabis $wdir/symabis -asmhdr $wdir/go_asm.h"
+  fi
+
+  if [[ $pkg = "runtime" ]]; then
+    sruntime="-+"
+  fi
+
+  complete="1"
+  if [[ -n $asmfiles ]]; then
+    complete="0"
+  fi
+  if [[ "$std" = "1" ]]; then
+    # see /usr/local/opt/go/libexec/src/cmd/go/internal/work/gc.go:119
+    if [[ $pkg = "os" || $pkg = "sync" || $pkg = "syscall" || $pkg = "internal/poll" || $pkg = "time" ]]; then
+      complete="0"
+    fi
+  fi
+
+  if [ "$complete" = "1" ]; then
+    scomplete="-complete"
+  fi
+  if [ "$std" = "1" ]; then
+    sstd="-std"
+  fi
+  if [ "$pkg" = "main" ]; then
+    slang="-lang=go1.20"
+  fi
+
+  local otheropts="$sruntime $scomplete $sstd $slang $asmopts "
+  local pkgopts="-p $pkg -o $wdir/_pkg_.a\
+ -trimpath \"$wdir=>\"\
+ -buildid $BUILD_ID -goversion $GOVERSION -importcfg $wdir/importcfg"
+
+  local compile_opts="$pkgopts $otheropts -c=4 -nolocalimports -pack "
+  log "  compile option:" $compile_opts
+  log "  compiling: (${gobasenames[@]})"
+  $TOOL_DIR/compile $compile_opts $gofiles
+  if [[ -n $asmfiles ]]; then
+    append_asm $pkg $asmfiles
+  fi
+  $TOOL_DIR/buildid -w $wdir/_pkg_.a # internal
 }
 
 
