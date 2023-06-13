@@ -150,12 +150,14 @@ function eval_build_tag() {
     IS_UNIX="unix|"
   fi
 
+  # TODO: goVersion parsing is not correct.
   logical_expr=$(
     echo $matched \
     | sed -E "s/boringcrypto/false/g" \
     | sed -E "s/(${IS_UNIX}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
     | sed -E 's/goexperiment\.\w+/false/g' \
+    | sed -E "s/go1\.[0-9][0-9]?/${_TRUE_}/g" \
     | sed -E 's/[a-zA-Z0-9_\-\.]+/false/g' \
     | sed -E "s/$_TRUE_/true/g" \
     | sed -e 's/!true/false/g' \
