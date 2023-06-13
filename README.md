@@ -29,9 +29,8 @@ hello world (go1.20.4)
 
 # TODO
 * [ ] Refactor code
-* [ ] Support vendor directory
 * [ ] Support Apple silicon
-* [ ] Debug option
+* [ ] Debug features
 
 # License
 MIT
