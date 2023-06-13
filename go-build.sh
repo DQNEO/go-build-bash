@@ -80,16 +80,6 @@ function log() {
   fi
 }
 
-log "#"
-log "# Initial settings"
-log "#"
-log "GOOS:" $GOOS
-log "GOARCH:" $GOARCH
-log "main module:" $MAIN_MODULE
-log "ARG:" $ARG
-log "out file:" $OUT_FILE
-log "work dir:" $WORK
-
 
 # Associative arrays to manage properties of each package
 declare -A PKGS_ID=()
@@ -581,5 +571,15 @@ function go_build() {
     do_link
   fi
 }
+
+log "#"
+log "# Initial settings"
+log "#"
+log "GOOS:" $GOOS
+log "GOARCH:" $GOARCH
+log "main module:" $MAIN_MODULE
+log "ARG:" $ARG
+log "out file:" $OUT_FILE
+log "work dir:" $WORK
 
 go_build "$ARG"
