@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/DQNEO/go-build-bash/lib"
+	"github.com/DQNEO/go-build-bash/examples/hello/lib"
 
 	"fmt"
 	"runtime"

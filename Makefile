@@ -1,27 +1,11 @@
 .PHONEY: all
-all: hello.mac hello.linux
-
-hello.mac: *.go go-build.sh Makefile
-	GOOS=darwin GOARCH=amd64 ./go-build.sh -o $@
-
-hello.linux: *.go go-build.sh Makefile
-	GOOS=linux GOARCH=amd64 ./go-build.sh -o $@
-
-.PHONEY: test
-# test on a non-linux host machine
-test: hello.linux
-	docker run --rm -v `pwd`:/mnt/ -w /mnt busybox ./$<
+all:
+	make -C examples/hello all
 
 .PHONEY: test-on-linux
-# test on a linux host machine
-test-on-linux: hello.linux
-	./$<
-
-# build for the host machine as the target
-hello: *.go go-build.sh Makefile
-	./go-build.sh -o $@
+test-on-linux:
+	make -C examples/hello test-on-linux
 
 .PHONEY: clean
 clean:
-	rm -rf ./hello ./hello.* /tmp/go-build-bash ./go-build-bash
-
+	make -C examples/hello clean
