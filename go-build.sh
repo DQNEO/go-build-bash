@@ -44,35 +44,6 @@ if [[ $OSTYPE == "darwin"* ]]; then
 fi
 
 
-# Parse go.mod
-declare MAIN_MODULE
-declare MAIN_MODULE_DIR=$(pwd)
-if [[ -e go.mod ]]; then
-  MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
-fi
-
-# Parse argv
-
-# go help buildmode:
-#	Listed main packages are built into executables and listed
-#	non-main packages are built into .a files (the default
-#	behavior).
-OUT_FILE=$(basename $MAIN_MODULE)
-if (( $# >= 1 )); then
-  if [[ $1 == "-o" ]]; then
-    shift
-    OUT_FILE=$1
-    shift
-  fi
-fi
-
-declare ARG
-if (( $# >= 1 )); then
-  ARG=$1
-else
-  ARG="."
-fi
-
 debug="true" # true or false
 function log() {
   if eval $debug; then
@@ -571,6 +542,36 @@ function go_build() {
     do_link
   fi
 }
+
+# Parse go.mod
+declare MAIN_MODULE
+declare MAIN_MODULE_DIR=$(pwd)
+if [[ -e go.mod ]]; then
+  MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
+fi
+
+# Parse argv
+
+# go help buildmode:
+#	Listed main packages are built into executables and listed
+#	non-main packages are built into .a files (the default
+#	behavior).
+OUT_FILE=$(basename $MAIN_MODULE)
+if (( $# >= 1 )); then
+  if [[ $1 == "-o" ]]; then
+    shift
+    OUT_FILE=$1
+    shift
+  fi
+fi
+
+declare ARG
+if (( $# >= 1 )); then
+  ARG=$1
+else
+  ARG="."
+fi
+
 
 log "#"
 log "# Initial settings"
