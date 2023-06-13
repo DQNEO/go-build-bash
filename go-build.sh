@@ -275,17 +275,19 @@ function find_depends() {
   }
 }
 
+# Make an importcfg file.
+# It contains a list of packages this package directly imports
 function make_importcfg() {
-  pkg=$1
-  wdir=$WORK/${PKGS_ID[$pkg]}
-  local cfgfile=$wdir/importcfg
-  (
-    echo '# import config'
-    for f in ${PKGS_DEPEND[$pkg]}; {
-      echo "packagefile $f=$WORK/${PKGS_ID[$f]}/_pkg_.a"
-    }
-  ) >$cfgfile
+  local cfgfile=$1
+  shift;
+  local pkgs="$@"
 
+  {
+    echo '# import config'
+    for p in $pkgs; {
+      echo "packagefile $p=$WORK/${PKGS_ID[$p]}/_pkg_.a"
+    }
+  } > $cfgfile
   log "  generating the import config file: $cfgfile"
   log "      ----"
   awk '{$1="      "$1}1' <$cfgfile >/dev/stderr
@@ -358,10 +360,9 @@ function build_pkg() {
     fi
   }
 
-  # Make an importcfg file.
-  # It contains a list of packages this package imports
-  make_importcfg $pkg
+  make_importcfg $wdir/importcfg ${PKGS_DEPEND[$pkg]}
 
+  # Preparing compile options
   local asmopts=""
   local sruntime=""
   local scomplete=""
@@ -372,6 +373,9 @@ function build_pkg() {
   if [[ ! $pkg =~ \. ]] && [[ $pkg != "main" ]]; then
     std="1"
   fi
+
+  # If there is any asm files,
+  #  generate a symabis file and pass it to the compile option
   if [[ -n $asmfiles ]]; then
     if [[ "$std" = "1" ]]; then
       touch $wdir/go_asm.h
@@ -405,12 +409,11 @@ function build_pkg() {
     slang="-lang=go1.20"
   fi
 
-  local otheropts="$sruntime $scomplete $sstd $slang $asmopts "
   local pkgopts="-p $pkg -o $wdir/_pkg_.a\
  -trimpath \"$wdir=>\"\
- -buildid $BUILD_ID -goversion $GOVERSION -importcfg $wdir/importcfg"
+ -buildid $BUILD_ID -goversion $GOVERSION -importcfg $wdir/importcfg $sruntime $scomplete $sstd $slang $asmopts"
 
-  local compile_opts="$pkgopts $otheropts -c=4 -nolocalimports -pack "
+  local compile_opts="$pkgopts -c=4 -nolocalimports -pack "
   log "  compile option:" $compile_opts
   log "  compiling: (${gobasenames[@]})"
   $TOOL_DIR/compile $compile_opts $gofiles
