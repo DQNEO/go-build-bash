@@ -1,15 +1,7 @@
-.PHONEY: all
-all:
-	make -C examples/hello all
+.PHONEY: test-hello-mac
+test-hello-mac:
+	make -C examples/hello test-on-mac
 
-.PHONEY: test-on-mac
-test-on-mac:
-	make -C examples/hello $@
-
-.PHONEY: test-on-linux
-test-on-linux:
-	make -C examples/hello $@
-
-.PHONEY: clean
-clean:
-	make -C examples/hello clean
+.PHONEY: test-hello-linux
+test-hello-linux:
+	make -C examples/hello test-on-linux

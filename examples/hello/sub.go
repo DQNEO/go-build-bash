@@ -1,5 +1,5 @@
 package main
 
-func w() string {
-	return "world"
+func Hello() string {
+	return "hello"
 }

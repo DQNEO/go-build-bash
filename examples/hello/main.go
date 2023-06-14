@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	world := w()
-	n := lib.Sum(30, 12)
-	fmt.Printf("hello %s %d (%s)\n", world, n, runtime.Version())
+	hello := Hello()
+	world := lib.World()
+	fmt.Printf("%s %s (%s)\n", hello, world, runtime.Version())
 }
