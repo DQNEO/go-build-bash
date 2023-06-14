@@ -513,7 +513,7 @@ function build_pkg() {
   fi
   if [[ "$std" = "1" ]]; then
     # see /usr/local/opt/go/libexec/src/cmd/go/internal/work/gc.go:119
-    if [[ $pkg = "os" || $pkg = "sync" || $pkg = "syscall" || $pkg = "internal/poll" || $pkg = "time" ]]; then
+    if [[ $pkg = "net" || $pkg = "bytes" || $pkg = "os" || $pkg = "sync" || $pkg = "syscall" || $pkg = "internal/poll" || $pkg = "time" || $pkg = "runtime/metrics" || $pkg = "runtime/pprof" || $pkg = "runtime/trace" ]]; then
       complete="0"
     fi
   fi
