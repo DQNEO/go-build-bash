@@ -4,7 +4,8 @@
 #
 set -eu
 
-WORK=/tmp/go-build-bash/$(date +%s)
+WORK=/tmp/go-build-bash/w/$(date +%s)
+CACHE=/tmp/go-build-bash/cache
 BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
 
 GOROOT=$(go env GOROOT)
@@ -447,6 +448,10 @@ function build_pkg() {
   shift
   local filenames=($@)
   local pkgdir=$(dirname ${filenames[0]})
+  local pkgcachedir=${CACHE}/${GOOS}_${GOARCH}/${pkg}
+  local cachefile=$pkgcachedir/_pkg_.a
+  local wdir=$WORK/${PKGS_ID[$pkg]}
+  local archive=$wdir/_pkg_.a
 
   log ""
   log "[$pkg]"
@@ -454,9 +459,16 @@ function build_pkg() {
 
   # Create a work directory to build the package
   # All outputs are stored into this directory
-  local wdir=$WORK/${PKGS_ID[$pkg]}
   log "  mkdir -p $wdir/"
   mkdir -p $wdir/
+
+  # Restore from cache if exists
+  if [[ -f $cachefile ]]; then
+    log "  restoring from cache:" $cachefile
+    ln -s $cachefile $archive
+    return
+  fi
+
 
   local gofiles=""
   local asmfiles=""
@@ -530,7 +542,7 @@ function build_pkg() {
   if [[ -f $embedcfg ]]; then
     sembed="-embedcfg $embedcfg"
   fi
-  local pkgopts="-p $pkg -o $wdir/_pkg_.a\
+  local pkgopts="-p $pkg -o $archive\
  -trimpath \"$wdir=>\"\
  -buildid $BUILD_ID -goversion $GOVERSION -importcfg $wdir/importcfg $sembed $sruntime $scomplete $sstd $slang $asmopts"
 
@@ -541,7 +553,9 @@ function build_pkg() {
   if [[ -n $asmfiles ]]; then
     append_asm $pkg $asmfiles
   fi
-  $TOOL_DIR/buildid -w $wdir/_pkg_.a # internal
+  $TOOL_DIR/buildid -w $archive # internal
+  mkdir -p $pkgcachedir
+  cp $archive $pkgcachedir
 }
 
 
