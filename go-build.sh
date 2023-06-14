@@ -53,21 +53,23 @@ function log() {
 
 
 # Associative arrays to manage properties of each package
-declare -A PKGS_ID=()
-declare -A PKGS_DEPEND=()
-declare -A PKGS_FILES=()
+declare -A PKGS_ID=()        # e.g. "fmt" => "007"
+declare -A PKGS_DEPEND=()    # e.g. "fmt" => "os strconv"
+declare -A PKGS_FILES=()     # e.g. "fmt" => "print.go foo.go bar.s"
 
+# Get source directory of std packages
 function get_std_pkg_dir() {
-  local pkg=$1
+  local -r pkg=$1
   echo $GOROOT/src/$pkg
 }
 
+# Parse import declarations from given files
 function parse_imports() {
-  local dir=$1
+  local -r dir=$1
   shift
-  local absfiles="$@"
+  local -r absfiles="$@"
 
-  local tmpfile=$WORK/_tmp_parse_imports.txt
+  local -r tmpfile=$WORK/_tmp_parse_imports.txt
   cat $absfiles | tr '\n' '~' >$tmpfile
 
   set +e
