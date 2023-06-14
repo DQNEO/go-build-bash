@@ -124,10 +124,9 @@ function list_maching_files_in_dir() {
   local dir=$1
   local allfiles=$(find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n")
   local ary=($allfiles)
-  log "  allfiles=(${ary[@]})"
+  log "  allfiles: (${ary[@]})"
   echo "$allfiles" |\
     grep -v -E '_test\.go' |
-    grep -v -E '(bypasssafe|ct_win|bytestostr_nounsafe|error_1_13|go_below_19|go_below_11.)\.go' |
     grep -v -E "_(${NON_GOOS_LIST})(\.|_)" |
     grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
 }
@@ -153,7 +152,7 @@ function eval_build_tag() {
   # TODO: goVersion parsing is not correct.
   logical_expr=$(
     echo $matched \
-    | sed -E "s/boringcrypto/false/g" \
+    | sed -E "s/(boringcrypto|gccgo)/false/g" \
     | sed -E "s/(${IS_UNIX}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
     | sed -E 's/goexperiment\.\w+/false/g' \
@@ -167,30 +166,43 @@ function eval_build_tag() {
     | sed -e 's/^false ||//g' \
     | sed -e 's/^false &&.*/false/g'
   )
-  log "    build tag: $f '$matched' => '$logical_expr'"
+  log "    $f: $logical_expr ($matched)"
   eval $logical_expr;
 }
 
 function get_build_tag() {
   local fullpath=$1
-  set +e
-  matched=$(grep -m 1 --only-matching -E '^//go:build .+$' $fullpath)
-  set -e
-  matched=${matched##"//go:build "}
-  echo $matched
+  local matched=$(grep -m 1 --only-matching -E '^//go:build.+$' $fullpath)
+  if [[ -n $matched ]]; then
+    matched=${matched##"//go:build "}
+    echo $matched
+    return
+  fi
+
+  local matched=$(grep -m 1 --only-matching -E '^// *\+build.+$' $fullpath)
+  if [[ -n $matched ]]; then
+    matched=$(echo $matched | sed -E 's#^// *\+build##' | tr ',' ' ')
+    echo $matched
+    return
+  fi
 }
 
 function debug_build_tag() {
-  local f=$1
-  local tag=$(get_build_tag $f)
-  eval_build_tag "$f" "$tag" && echo "true"
+  local files="$@"
+  log "  checking build tag ..."
+  for f in $files; {
+    local tag=$(get_build_tag $f)
+    log "    $f: $tag"
+    eval_build_tag "$f" "$tag"
+  }
 }
+
 function find_matching_files() {
   local dir=$1
   local files=$(list_maching_files_in_dir $dir)
   local gofiles=()
   local asfiles=()
-
+  log "  checking build tag ..."
   local f
   for f in $files; {
     local fullpath="$dir/$f"
@@ -240,23 +252,24 @@ function find_depends() {
   if [[ $pkg =~ \. ]]; then
     : # non-std lib
     if [[ $pkg = ${MAIN_MODULE}/* ]]; then
-      log "  assuming in-module package"
+      log "  package type: in-module"
       relpath=${pkg#${MAIN_MODULE}}
       log "relpath=$relpath"
       pkgdir=${MAIN_MODULE_DIR}${relpath}
     elif [[ $pkg = golang.org/x/* ]]; then
-      log "  assuming sub std package"
       if [[ -e ./vendor/${pkg} ]]; then
+        log "  package type: vendor"
         pkgdir=./vendor/${pkg}
       else
+        log "  package type: std"
         pkgdir=$GOROOT/src/vendor/$pkg
       fi
     else
-      log "  assuming vendor package"
+      log "  package type: vendor"
       pkgdir=./vendor/${pkg}
     fi
   else
-    log "  assuming std package"
+      log "  package type: std"
     pkgdir=$(get_std_pkg_dir $pkg)
   fi
 
@@ -379,6 +392,7 @@ function process_embed() {
 
       echo "{"
       echo ' "Patterns": {'
+      additional=""
       for pattern in ${!patterns[@]} ; {
         if [[ -z $additional ]]; then
           additional="1"
@@ -463,6 +477,9 @@ function build_pkg() {
   mkdir -p $wdir/
 
   # Restore from cache if exists
+  if [[ $pkg == "main" ]]; then
+    rm -f $cachefile
+  fi
   if [[ -f $cachefile ]]; then
     log "  restoring from cache:" $cachefile
     ln -s $cachefile $archive
@@ -600,7 +617,13 @@ function go_build() {
   local buildmode=""
 
   log "pkgpath='$pkgpath'"
-  if [[ $pkgpath == "." ]] || [[ $pkgpath == \.* ]]; then
+  if [[ $pkgpath ==  ./vendor/* ]]; then
+    # relative path
+    log "assuming vendor package"
+    buildmode=archive
+    pkgdir=$pkgpath
+    toplevelpkg=${pkgpath##./vendor/}
+  elif [[ $pkgpath == "." ]] || [[ $pkgpath == \.* ]]; then
     # relative path
     log "assuming main package"
     buildmode=exe
@@ -628,7 +651,7 @@ function go_build() {
   log "# Finding files"
   log "#"
   log "[$toplevelpkg]"
-  log "  dir:$pkgdir"
+  log "  dir: $pkgdir"
   local files=$(find_matching_files $pkgdir)
   if [[ -z $files ]]; then
     log "ERROR: no files"
@@ -711,10 +734,12 @@ if (( $# >= 1 )); then
     # ./examples/kubectl/vendor/k8s.io/kubectl/pkg/explain/v2/template.go
     declare debug_embed_filepath=$2 # pass a go file
     declare debug_embed_dir=$(dirname $debug_embed_filepath)
-    process_embed $debug_embed_dir $debug_embed_filepath
+    #set -x
+    process_embed $debug_embed_dir /dev/stderr $debug_embed_filepath
     exit 0
   elif [[ $1 = "--debug-tag" ]]; then
-    debug_build_tag $2 # pass a go file
+    shift;
+    debug_build_tag $@ # pass go files
     exit
   elif [[ $1 = "--debug-find-files" ]]; then
     find_matching_files $2 # pass a directory
