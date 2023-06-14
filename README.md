@@ -27,7 +27,7 @@ $ cd examples/hello
 $ GOOS=linux GOARCH=amd64 ../../go-build.sh
 $ docker run --rm -v `pwd`:/mnt/ -w /mnt busybox ./hello
 
-hello world (go1.20.4)
+hello world
 ```
 
 Build kubectl
