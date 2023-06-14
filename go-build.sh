@@ -127,6 +127,8 @@ function list_maching_files_in_dir() {
   echo "$allfiles" |\
     grep -v -E '_test\.go' |
     grep -v -E 'go_below_11.\.go' |
+    grep -v -E 'error_1_13\.go' |
+    grep -v -E 'bypasssafe.go' |
     grep -v -E 'ct_win.go' | # // https://github.com/daviddengcn/go-colortext/blob/master/ct_win.go#L1
     grep -v -E "_(${NON_GOOS_LIST})(\.|_)" |
     grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
