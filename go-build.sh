@@ -20,6 +20,8 @@ if [[ ! -v GOOS || -z $GOOS ]]; then
   GOOS=$(go env GOHOSTOS)
 fi
 
+# For now we support only darwin and linux,
+# which means !darwin == linux
 if  [[ $GOOS = "darwin" ]]; then
   readonly NON_GOOS="linux"
 elif [[ $GOOS = "linux" ]]; then
@@ -81,6 +83,7 @@ function parse_imports() {
   ) | grep -E --only-matching '\"[^\"]+\"' | grep -v '"unsafe"' | tr -d '"' | sort | uniq
 }
 
+# Print dependency tree of packages
 function print_depend_tree() {
   local p v w
   for p in ${!PKGS_DEPEND[@]}; {
@@ -115,10 +118,11 @@ function sort_pkgs() {
   done
 }
 
-NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris"
-NON_GOARCH_LIST='386|arm[^_]*|loong64|mips[^_]*|ppc64[^_]*|riscv[^_]*|ppc|s390[^_]*|sparc[^_]*|wasm'
+readonly NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfly|freebsd|js|netbsd|openbsd|solaris"
+readonly NON_GOARCH_LIST='386|arm[^_]*|loong64|mips[^_]*|ppc64[^_]*|riscv[^_]*|ppc|s390[^_]*|sparc[^_]*|wasm'
 
-function list_maching_files_in_dir() {
+# List source files in a dir and filter them by filename rules
+function list_source_files_in_dir() {
   local -r dir=$1
   local -r allfiles=$(find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n")
   local -ar ary=($allfiles)
@@ -128,15 +132,16 @@ function list_maching_files_in_dir() {
 
 readonly _TRUE_="@@@"
 
+# Evaluate logical expressions in the build tag
 function eval_build_tag() {
   local -r f=$1 # for logging
-  local -r matched=$2
-  if [[ $matched = "ignore" ]]; then
+  local -r tag=$2
+  if [[ $tag = "ignore" ]]; then
     # ignore
-    return 1
-  elif [[ -z $matched ]]; then
+    return 1 # false
+  elif [[ -z $tag ]]; then
     # empty
-    return 0
+    return 0 # true
   fi
 
   local is_unix=""
@@ -146,7 +151,7 @@ function eval_build_tag() {
 
   # TODO: goVersion parsing is not correct.
   logical_expr=$(
-    echo $matched \
+    echo $tag \
     | sed -E "s/(boringcrypto|gccgo)/false/g" \
     | sed -E "s/(${is_unix}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
@@ -161,20 +166,21 @@ function eval_build_tag() {
     | sed -e 's/^false ||//g' \
     | sed -e 's/^false &&.*/false/g'
   )
-  log "    $f: $logical_expr ($matched)"
+  log "    $f: $logical_expr ($tag)"
   eval $logical_expr;
 }
 
+# Parse build tag from source file
 function get_build_tag() {
-  local fullpath=$1
-  local matched=$(grep -m 1 --only-matching -E '^//go:build.+$' $fullpath)
+  local -r sourcefile=$1
+  local matched=$(grep -m 1 --only-matching -E '^//go:build.+$' $sourcefile)
   if [[ -n $matched ]]; then
     matched=${matched##"//go:build "}
     echo $matched
     return
   fi
 
-  local matched=$(grep -m 1 --only-matching -E '^// *\+build.+$' $fullpath)
+  local matched=$(grep -m 1 --only-matching -E '^// *\+build.+$' $sourcefile)
   if [[ -n $matched ]]; then
     matched=$(echo $matched | sed -E 's#^// *\+build##' | tr ',' ' ')
     echo $matched
@@ -192,21 +198,22 @@ function debug_build_tag() {
   }
 }
 
-function find_matching_files() {
+# select files to compile
+function select_source_files() {
   local dir=$1
-  local files=$(list_maching_files_in_dir $dir)
+  local files=$(list_source_files_in_dir $dir)
   local gofiles=()
   local asfiles=()
   log "  checking build tag ..."
   local f
   for f in $files; {
-    local fullpath="$dir/$f"
-    local tag=$(get_build_tag $fullpath)
+    local sourcefile="$dir/$f"
+    local tag=$(get_build_tag $sourcefile)
     if eval_build_tag "$f" "$tag"; then
-      if [[ $fullpath == *.go ]]; then
-        gofiles+=($fullpath)
-      elif [[ $fullpath == *.s ]]; then
-        asfiles+=($fullpath)
+      if [[ $sourcefile == *.go ]]; then
+        gofiles+=($sourcefile)
+      elif [[ $sourcefile == *.s ]]; then
+        asfiles+=($sourcefile)
       else
         log "something wrong happened"
         exit 1
@@ -221,7 +228,7 @@ function find_matching_files() {
 }
 
 # Convert absolute filenames to base names.
-# The purpose is for log's readability
+# Mostly for pretty logging
 function abspaths_to_basenames() {
   local paths="$@"
   local files=""
@@ -232,6 +239,7 @@ function abspaths_to_basenames() {
   echo $files
 }
 
+# Find dependencies by looking for import decls recursively
 function find_depends() {
   local pkg=$1
   local used_from=$2
@@ -274,7 +282,7 @@ function find_depends() {
   fi
 
   log "  dir:$pkgdir"
-  local files=$(find_matching_files $pkgdir)
+  local files=$(select_source_files $pkgdir)
   if [[ -z $files ]]; then
     log "ERROR: no files"
     return 1
@@ -311,18 +319,17 @@ function make_importcfg() {
   log "      ----"
 }
 
+# Process embed tags if present
 function process_embed() {
-  log "------ check embed -------"
   local dir=$1
   local cfgfile=$2
   shift; shift;
   local gofiles=$@
-  log "gofiles=$gofiles"
   local matched=$(cat $gofiles | grep -E --only-matching --no-filename '^\s*//go:embed .*'  | sed -e 's#//go:embed ##g' | sed -e 's#//.*##g')
-  log " embed matched:" $matched
   if [[ -z $matched ]]; then
     return
   fi
+  log "  embed tag:" $matched
   local pattern=""
   local -A fileToPath=()
   local -A patterns=() # 'pattern' => '"file1","file2",...'
@@ -383,7 +390,7 @@ function process_embed() {
     fi
   }
 
-  # output json
+  # print json
   {
 
       echo "{"
@@ -419,7 +426,7 @@ function process_embed() {
 
 }
 
-
+# Generate symabis file
 function gen_symabis() {
   local pkg=$1
   shift
@@ -430,6 +437,7 @@ function gen_symabis() {
   $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -gensymabis -o $outfile $asfiles
 }
 
+# Assemble ams files and append them to the archive
 function append_asm() {
   local pkg=$1
   shift
@@ -649,7 +657,7 @@ function go_build() {
   log "#"
   log "[$toplevelpkg]"
   log "  dir: $pkgdir"
-  local files=$(find_matching_files $pkgdir)
+  local files=$(select_source_files $pkgdir)
   if [[ -z $files ]]; then
     log "ERROR: no files"
     return 1
@@ -739,8 +747,8 @@ if (( $# >= 1 )); then
     shift;
     debug_build_tag "$@" # pass go files
     exit 0
-  elif [[ $1 = "--debug-find-files" ]]; then
-    find_matching_files $2 # pass a directory
+  elif [[ $1 = "--debug-select-files" ]]; then
+    select_source_files $2 # pass a directory
     exit 0
   fi
 fi
