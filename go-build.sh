@@ -326,7 +326,7 @@ function process_embed() {
   local pattern=""
   local -A fileToPath=()
   local -A patterns=() # 'pattern' => '"file1","file2",...'
-  local additional=""
+  local needcomma=""
   for pattern in $matched ; {
     # pattern is either a filename, dirname or glob
     log "  embed_pattern=$pattern"
@@ -340,7 +340,7 @@ function process_embed() {
       log "  embed type=dir"
       local files=$(find $path -type f  -not -name test -printf " %P")
       log "  files=$files"
-      additional=""
+      needcomma=""
       local pttrns=""
       for f in $files; {
         log "    f=" $f
@@ -348,8 +348,8 @@ function process_embed() {
         log "    rel=" $relname
         fileToPath[$relname]=$(realpath $path/$f)
         local comma=""
-        if [[ -z $additional ]]; then
-          additional="1"
+        if [[ -z $needcomma ]]; then
+          needcomma="1"
         else
           comma=","
         fi
@@ -360,16 +360,17 @@ function process_embed() {
       log "  embed type=glob"
       local expanded_files=$(echo $path)
       log " expanded=(" $expanded_files ")"
-      additional=""
+      needcomma=""
       local pttrns=""
+      local f
       for f in "$expanded_files"; {
         log "    f=" $f
         local relname=${f##$dir/}
         log "    rel=" $relname
         fileToPath[$relname]=$(realpath $f)
         local comma=""
-        if [[ -z $additional ]]; then
-          additional="1"
+        if [[ -z $needcomma ]]; then
+          needcomma="1"
         else
           comma=","
         fi
@@ -387,10 +388,10 @@ function process_embed() {
 
       echo "{"
       echo ' "Patterns": {'
-      additional=""
+      needcomma=""
       for pattern in ${!patterns[@]} ; {
-        if [[ -z $additional ]]; then
-          additional="1"
+        if [[ -z $needcomma ]]; then
+          needcomma="1"
         else
           echo -n ","
         fi
@@ -401,10 +402,10 @@ function process_embed() {
       echo '  },'
 
       echo ' "Files": {'
-      additional=""
+      needcomma=""
       for f in ${!fileToPath[@]} ; {
-        if [[ -z $additional ]]; then
-          additional="1"
+        if [[ -z $needcomma ]]; then
+          needcomma="1"
         else
           echo -n ","
         fi
@@ -420,23 +421,24 @@ function process_embed() {
 
 
 function gen_symabis() {
-  pkg=$1
+  local pkg=$1
   shift
-  asfiles="$@"
-  wdir=$WORK/${PKGS_ID[$pkg]}
-  outfile=$wdir/symabis
+  local asfiles="$@"
+  local wdir=$WORK/${PKGS_ID[$pkg]}
+  local outfile=$wdir/symabis
   log "  generating the symabis file: $outfile"
   $TOOL_DIR/asm -p $pkg -trimpath "$wdir=>" -I $wdir/ -I $GOROOT/pkg/include -D $ASM_D_GOOS -D $ASM_D_GOARCH -compiling-runtime -D GOAMD64_v1 -gensymabis -o $outfile $asfiles
 }
 
 function append_asm() {
-  pkg=$1
+  local pkg=$1
   shift
-  files="$@"
+  local files="$@"
 
-  wdir=$WORK/${PKGS_ID[$pkg]}
+  local wdir=$WORK/${PKGS_ID[$pkg]}
   local ofiles=""
   local obasenames=() # for logging
+  local f
   for f in $files; {
     local basename=$(basename $f)
     local baseo=${basename%.s}.o
@@ -453,7 +455,7 @@ function append_asm() {
 
 # Build a package
 function build_pkg() {
-  pkg=$1
+  local pkg=$1
   shift
   local filenames=($@)
   local pkgdir=$(dirname ${filenames[0]})
@@ -502,7 +504,7 @@ function build_pkg() {
 
   make_importcfg $wdir/importcfg ${PKGS_DEPEND[$pkg]}
 
-  embedcfg=$wdir/embedcfg
+  local embedcfg=$wdir/embedcfg
   process_embed $pkgdir $embedcfg $gofiles
 
   # Preparing compile options
