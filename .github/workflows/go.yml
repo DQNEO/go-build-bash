@@ -28,4 +28,4 @@ jobs:
       run: make test-on-linux
 
     - name: try kubectl
-      run: ./go-build.sh ../examples/kubectl
+      run: cd ./examples/kubectl ; ../../go-build.sh
