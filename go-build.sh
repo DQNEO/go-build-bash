@@ -81,7 +81,7 @@ function parse_imports() {
   ) | grep -E --only-matching '\"[^\"]+\"' | grep -v '"unsafe"' | tr -d '"' | sort | uniq
 }
 
-function dump_depend_tree() {
+function print_depend_tree() {
   local p v w
   for p in ${!PKGS_DEPEND[@]}; {
     echo -n "$p:"
@@ -669,7 +669,7 @@ function go_build() {
     find_depends $_pkg $toplevelpkg
   }
 
-  dump_depend_tree >$WORK/depends.txt
+  print_depend_tree >$WORK/depends.txt
   log ""
   log "#"
   log "# Got dependency tree"
