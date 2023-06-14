@@ -123,15 +123,14 @@ function list_maching_files_in_dir() {
   local -r allfiles=$(find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n")
   local -ar ary=($allfiles)
   log "  allfiles: (${ary[@]})"
-  echo "$allfiles" |\
-    grep -v -E '_test\.go' |
-    grep -v -E "_(${NON_GOOS_LIST})(\.|_)" |
-    grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
+  echo "$allfiles" | grep -v -E '_test\.go' | grep -v -E "_(${NON_GOOS_LIST})(\.|_)" | grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
 }
 
+readonly _TRUE_="@@@"
+
 function eval_build_tag() {
-  local f=$1 # for logging
-  local matched=$2
+  local -r f=$1 # for logging
+  local -r matched=$2
   if [[ $matched = "ignore" ]]; then
     # ignore
     return 1
@@ -140,18 +139,16 @@ function eval_build_tag() {
     return 0
   fi
 
-  _TRUE_="@@@"
-
-  IS_UNIX=""
+  local is_unix=""
   if [[ $GOOS = "linux" || $GOOS = "darwin" ]]; then
-    IS_UNIX="unix|"
+    is_unix="unix|"
   fi
 
   # TODO: goVersion parsing is not correct.
   logical_expr=$(
     echo $matched \
     | sed -E "s/(boringcrypto|gccgo)/false/g" \
-    | sed -E "s/(${IS_UNIX}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
+    | sed -E "s/(${is_unix}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
     | sed -E 's/goexperiment\.\w+/false/g' \
     | sed -E "s/go1\.[0-9][0-9]?/${_TRUE_}/g" \
