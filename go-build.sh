@@ -35,7 +35,7 @@ readonly ASM_D_GOARCH=GOARCH_${GOARCH}
 # Use gnu tools for MacOS
 if [[ $OSTYPE == "darwin"* ]]; then
   if ! which gfind >/dev/null || ! which gsed >/dev/null; then
-    "gfind and gsed commands are required. Please try 'brew install findutils gnu-sed'" >/dev/stderr
+    "gfind and gsed commands are required. Please try 'brew install bash findutils gnu-sed coreutils'" >/dev/stderr
     exit 1
   fi
   shopt -s expand_aliases

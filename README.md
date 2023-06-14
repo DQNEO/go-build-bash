@@ -10,7 +10,7 @@ The purpose of this project is to help go users learn how `go build` works.
 * Bash 5.1 or later
 * go version 1.20
 * OS:MacOS or Linux
-* (On MacOS) `brew install bash findutils gnu-sed`
+* (On MacOS) `brew install bash findutils gnu-sed coreutils`
 * CPU:x86-64
 
 ## Target machine
