@@ -12,11 +12,11 @@ GOROOT=$(go env GOROOT)
 GOVERSION=$(go env GOVERSION)
 TOOL_DIR=$(go env GOTOOLDIR)
 
-if [[ (! -v GOARCH) || -z $GOARCH ]]; then
+if [[ ! -v GOARCH || -z $GOARCH ]]; then
   GOARCH=$(go env GOHOSTARCH)
 fi
 
-if [[ ( ! -v GOOS ) || -z $GOOS ]]; then
+if [[ ! -v GOOS || -z $GOOS ]]; then
   GOOS=$(go env GOHOSTOS)
 fi
 
