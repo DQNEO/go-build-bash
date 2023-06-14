@@ -4,13 +4,13 @@
 #
 set -eu
 
-WORK=/tmp/go-build-bash/w/$(date +%s)
-CACHE=/tmp/go-build-bash/cache
-BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
+readonly WORK=/tmp/go-build-bash/w/$(date +%s)
+readonly CACHE=/tmp/go-build-bash/cache
+readonly BUILD_ID=abcdefghijklmnopqrst/abcdefghijklmnopqrst
 
-GOROOT=$(go env GOROOT)
-GOVERSION=$(go env GOVERSION)
-TOOL_DIR=$(go env GOTOOLDIR)
+readonly GOROOT=$(go env GOROOT)
+readonly GOVERSION=$(go env GOVERSION)
+readonly TOOL_DIR=$(go env GOTOOLDIR)
 
 if [[ ! -v GOARCH || -z $GOARCH ]]; then
   GOARCH=$(go env GOHOSTARCH)
@@ -20,18 +20,17 @@ if [[ ! -v GOOS || -z $GOOS ]]; then
   GOOS=$(go env GOHOSTOS)
 fi
 
-# TODO: Stop prohibited list style and use allowed list instead
 if  [[ $GOOS = "darwin" ]]; then
-  NON_GOOS="linux"
+  readonly NON_GOOS="linux"
 elif [[ $GOOS = "linux" ]]; then
-  NON_GOOS="darwin"
+  readonly NON_GOOS="darwin"
 else
   echo "ERROR: unsupported GOOS: $GOOS" >/dev/stderr
   exit 1
 fi
 
-ASM_D_GOOS=GOOS_${GOOS}
-ASM_D_GOARCH=GOARCH_${GOARCH}
+readonly ASM_D_GOOS=GOOS_${GOOS}
+readonly ASM_D_GOARCH=GOARCH_${GOARCH}
 
 # Use gnu tools for MacOS
 if [[ $OSTYPE == "darwin"* ]]; then
