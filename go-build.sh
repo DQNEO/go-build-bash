@@ -72,21 +72,18 @@ function parse_imports() {
   local -r tmpfile=$WORK/_tmp_parse_imports.txt
   cat $absfiles | tr '\n' '~' >$tmpfile
 
-  set +e
   (
     cat $tmpfile |
       grep --only-matching --no-filename -E '~import\s*\([^\)]*\)'
 
     cat $tmpfile |
       grep --only-matching --no-filename -E '~import\s*[^"]*"[^"]+"'
-  ) |
-    grep -E --only-matching '\"[^\"]+\"' |
-    grep -v '"unsafe"' | tr -d '"' | sort | uniq
-  set -e
+  ) | grep -E --only-matching '\"[^\"]+\"' | grep -v '"unsafe"' | tr -d '"' | sort | uniq
 }
 
 function dump_depend_tree() {
-  for p in "${!PKGS_DEPEND[@]}"; {
+  local p v w
+  for p in ${!PKGS_DEPEND[@]}; {
     echo -n "$p:"
     for v in ${PKGS_DEPEND[$p]}; {
       for w in $v; {
@@ -99,12 +96,12 @@ function dump_depend_tree() {
 
 # Sort packages topologically
 function sort_pkgs() {
-  infile=$1
-  local workfile=$WORK/_tmp_sort_pkgs_work.txt
-  local tmpfile=$WORK/_tmp_sort_pkgs_tmp.txt
+  local -r infile=$1
+  local -r workfile=$WORK/_tmp_sort_pkgs_work.txt
+  local -r tmpfile=$WORK/_tmp_sort_pkgs_tmp.txt
 
   cp $infile $workfile
-
+  local leaves l
   while true; do
     leaves=$(cat $workfile | grep -e ': *$' | sed -e 's/: *//g')
     if [[ -z $leaves ]]; then
@@ -122,9 +119,9 @@ NON_GOOS_LIST="$NON_GOOS|android|ios|illumos|hurd|zos|plan9|windows|aix|dragonfl
 NON_GOARCH_LIST='386|arm[^_]*|loong64|mips[^_]*|ppc64[^_]*|riscv[^_]*|ppc|s390[^_]*|sparc[^_]*|wasm'
 
 function list_maching_files_in_dir() {
-  local dir=$1
-  local allfiles=$(find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n")
-  local ary=($allfiles)
+  local -r dir=$1
+  local -r allfiles=$(find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n")
+  local -ar ary=($allfiles)
   log "  allfiles: (${ary[@]})"
   echo "$allfiles" |\
     grep -v -E '_test\.go' |
@@ -582,7 +579,7 @@ function do_link() {
   local pkg=main
   local wdir=$WORK/${PKGS_ID[$pkg]}
   local pkgsfiles=""
-  for p in "${!PKGS_ID[@]}"; {
+  for p in ${!PKGS_ID[@]}; {
     pkgsfiles="${pkgsfiles}packagefile ${p}=$WORK/${PKGS_ID[$p]}/_pkg_.a
 "
   }
@@ -624,7 +621,7 @@ function go_build() {
     buildmode=archive
     pkgdir=$pkgpath
     toplevelpkg=${pkgpath##./vendor/}
-  elif [[ $pkgpath == "." ]] || [[ $pkgpath == \.* ]]; then
+  elif [[ $pkgpath == "." || $pkgpath == \.* ]]; then
     # relative path
     log "assuming main package"
     buildmode=exe
@@ -660,7 +657,7 @@ function go_build() {
   fi
   log "  files:" $files
   PKGS_FILES[$toplevelpkg]="$files"
-  local pkgs=($(parse_imports $pkgdir $files))
+  local -a pkgs=($(parse_imports $pkgdir $files))
   if [[ $toplevelpkg == "main" && ${#pkgs[@]} -eq 0 ]]; then
     # insert runtime
     pkgs[0]="runtime"
@@ -668,6 +665,7 @@ function go_build() {
   log "  imports:(${pkgs[@]})"
   log "  "
   PKGS_DEPEND[$toplevelpkg]="${pkgs[@]}"
+  local _pkg
   for _pkg in "${pkgs[@]}"; {
     find_depends $_pkg $toplevelpkg
   }
@@ -686,10 +684,10 @@ function go_build() {
 
   # Assign package ID number
   local id=2
-  for pkg in $sorted_pkgs; {
+  for _pkg in $sorted_pkgs; {
     id_string=$(printf "%03d" $id)
-    PKGS_ID[$pkg]=$id_string
-    log "[$id_string] $pkg"
+    PKGS_ID[$_pkg]=$id_string
+    log "[$id_string] $_pkg"
     id=$((id + 1))
   }
   PKGS_ID[$toplevelpkg]="001"
@@ -699,13 +697,13 @@ function go_build() {
   log "#"
   log "# Compiling packages"
   log "#"
-  for pkg in $sorted_pkgs; {
-    build_pkg $pkg ${PKGS_FILES[$pkg]}
+  for _pkg in $sorted_pkgs; {
+    build_pkg $_pkg ${PKGS_FILES[$_pkg]}
   }
 
   log ""
   log "#"
-  log "# Compiling the main package"
+  log "# Compiling the top level package"
   log "#"
   build_pkg $toplevelpkg ${PKGS_FILES[$toplevelpkg]}
 
@@ -740,11 +738,11 @@ if (( $# >= 1 )); then
     exit 0
   elif [[ $1 = "--debug-tag" ]]; then
     shift;
-    debug_build_tag $@ # pass go files
-    exit
+    debug_build_tag "$@" # pass go files
+    exit 0
   elif [[ $1 = "--debug-find-files" ]]; then
     find_matching_files $2 # pass a directory
-    exit
+    exit 0
   fi
 fi
 
