@@ -126,7 +126,7 @@ function list_maching_files_in_dir() {
   log "  allfiles=(${ary[@]})"
   echo "$allfiles" |\
     grep -v -E '_test\.go' |
-    grep -v -E '(bypasssafe|ct_win|bytestostr_nounsafe|error_1_13|go_below_11.)\.go' |
+    grep -v -E '(bypasssafe|ct_win|bytestostr_nounsafe|error_1_13|go_below_19|go_below_11.)\.go' |
     grep -v -E "_(${NON_GOOS_LIST})(\.|_)" |
     grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
 }
