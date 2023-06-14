@@ -27,3 +27,5 @@ jobs:
     - name: test
       run: make test-on-linux
 
+    - name: try kubectl
+      run: ./go-build.sh ../examples/kubectl
