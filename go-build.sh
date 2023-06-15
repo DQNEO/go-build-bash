@@ -726,7 +726,9 @@ function go_build() {
 declare MAIN_MODULE=""
 declare MAIN_MODULE_DIR=$(pwd)
 if [[ -e go.mod ]]; then
+  # module root
   MAIN_MODULE=$(grep -E '^module\s+.*' go.mod | awk '{print $2}')
+  go mod vendor
 fi
 
 # Parse argv
