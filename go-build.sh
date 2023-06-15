@@ -71,8 +71,8 @@ function parse_imports() {
   shift
   local -r absfiles="$@"
 
-  local -r tmpfile=$WORK/_tmp_parse_imports.txt
-  cat $absfiles | tr '\n' '~' >$tmpfile
+  local -r tmpfile=$WORK/_source_nl_stripped.txt
+  cat $absfiles | sed -E 's#//.+##g' | tr '\n' '~' >$tmpfile
 
   (
     cat $tmpfile |
