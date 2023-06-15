@@ -620,48 +620,66 @@ function go_build() {
   local toplevelpkg=""
   local buildmode=""
 
-  log "pkgpath='$pkgpath'"
+  log ""
+  log "#"
+  log "# Detecting build mode"
+  log "#"
+
+  log "  pkgpath='$pkgpath'"
   if [[ $pkgpath ==  ./vendor/* ]]; then
     # relative path
-    log "assuming vendor package"
+    log "  assuming vendor package"
     buildmode=archive
     pkgdir=$pkgpath
     toplevelpkg=${pkgpath##./vendor/}
   elif [[ $pkgpath == "." || $pkgpath == \.* ]]; then
     # relative path
-    log "assuming main package"
-    buildmode=exe
+    log "  relative path"
+    buildmode="" # decided later
+    toplevelpkg=""
     pkgdir=$pkgpath
-    toplevelpkg="main"
     if [[ -z $OUT_FILE ]]; then
       OUT_FILE=$(basename $MAIN_MODULE)
     fi
-
   elif [[ $pkgpath =~ \. ]]; then
     # url like path
     log "[ERROR] unsupported path"
     return 1
   else
     # stdlib style: "foo/bar"
-    log "assuming std package"
+    log "  assuming std package"
     buildmode=archive
     pkgdir=$(get_std_pkg_dir $pkgpath)
     toplevelpkg=$pkgpath
   fi
 
-  log "buildmode=$buildmode"
-  log ""
-  log "#"
-  log "# Finding files"
-  log "#"
-  log "[$toplevelpkg]"
-  log "  dir: $pkgdir"
   local files=$(select_source_files $pkgdir)
   if [[ -z $files ]]; then
     log "ERROR: no files"
     return 1
   fi
+
+  local -a _current_files=( $files )
+  if [[ -z $toplevelpkg ]]; then
+    toplevelpkg=$(grep -E '^package ' ${_current_files[0]} | awk '{print $2}')
+    if [[ $toplevelpkg == "main" ]]; then
+      buildmode="exe"
+    else
+      buildmode="archive"
+    fi
+  fi
+
+  log ""
+  log "buildmode: $buildmode"
+
+  log ""
+  log "#"
+  log "# Finding packages recursively"
+  log "#"
+  log "[$toplevelpkg]"
+  log "  dir: $pkgdir"
   log "  files:" $files
+
   PKGS_FILES[$toplevelpkg]="$files"
   local -a pkgs=($(parse_imports $pkgdir $files))
   if [[ $toplevelpkg == "main" && ${#pkgs[@]} -eq 0 ]]; then
