@@ -59,12 +59,6 @@ declare -A PKGS_ID=()        # e.g. "fmt" => "007"
 declare -A PKGS_DEPEND=()    # e.g. "fmt" => "os strconv"
 declare -A PKGS_FILES=()     # e.g. "fmt" => "print.go foo.go bar.s"
 
-# Get source directory of std packages
-function get_std_pkg_dir() {
-  local -r pkg=$1
-  echo $GOROOT/src/$pkg
-}
-
 # Parse import declarations from given files
 function parse_imports() {
   local -r dir=$1
@@ -279,7 +273,7 @@ function find_depends() {
     fi
   else
       log "  package type: std"
-    pkgdir=$(get_std_pkg_dir $pkg)
+    pkgdir=$GOROOT/src/$pkg
   fi
 
   if [[ ! -e $pkgdir ]]; then
@@ -655,7 +649,7 @@ function go_build() {
     # stdlib style: "foo/bar"
     log "  assuming std package"
     buildmode=archive
-    pkgdir=$(get_std_pkg_dir $pkgpath)
+    pkgdir=$GOROOT/src/$pkgpath
     toplevelpkg=$pkgpath
   fi
 
