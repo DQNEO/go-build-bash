@@ -133,14 +133,30 @@ readonly _TRUE_="@@@"
 
 # Evaluate logical expressions in the build tag
 function eval_build_tag() {
-  local -r f=$1 # for logging
-  local -r tag=$2
-  if [[ $tag = "ignore" ]]; then
-    # ignore
-    return 1 # false
-  elif [[ -z $tag ]]; then
+  local -r sourcefile=$1
+  local -r f=$2 # for logging
+
+  local tag=""
+  # Parse build tag from source file
+  local matched=$(grep -m 1 --only-matching -E '^//go:build.+$' $sourcefile)
+  if [[ -n $matched ]]; then
+    matched=${matched##"//go:build "}
+    tag=$matched
+  else
+    # try to parse old style build tag
+    local matched=$(grep -m 1 --only-matching -E '^// *\+build.+$' $sourcefile)
+    if [[ -n $matched ]]; then
+      matched=$(echo $matched | sed -E 's#^// *\+build##' | tr ',' ' ')
+      tag=$matched
+    fi
+  fi
+
+  if [[ -z $tag ]]; then
     # empty
-    return 0 # true
+    return 0 # true: compile this file
+  elif [[ $tag = "ignore" ]]; then
+    # ignore
+    return 1 # false: do not compile this file
   fi
 
   local is_unix=""
@@ -164,31 +180,12 @@ function eval_build_tag() {
   eval $logical_expr;
 }
 
-# Parse build tag from source file
-function get_build_tag() {
-  local -r sourcefile=$1
-  local matched=$(grep -m 1 --only-matching -E '^//go:build.+$' $sourcefile)
-  if [[ -n $matched ]]; then
-    matched=${matched##"//go:build "}
-    echo $matched
-    return
-  fi
-
-  local matched=$(grep -m 1 --only-matching -E '^// *\+build.+$' $sourcefile)
-  if [[ -n $matched ]]; then
-    matched=$(echo $matched | sed -E 's#^// *\+build##' | tr ',' ' ')
-    echo $matched
-    return
-  fi
-}
 
 function debug_build_tag() {
   local files="$@"
   log "  checking build tag ..."
   for f in $files; {
-    local tag=$(get_build_tag $f)
-    log "    $f: $tag"
-    eval_build_tag "$f" "$tag"
+    eval_build_tag "$f" "$f"
   }
 }
 
@@ -202,8 +199,8 @@ function select_source_files() {
   local f
   for f in $files; {
     local sourcefile="$dir/$f"
-    local tag=$(get_build_tag $sourcefile)
-    if eval_build_tag "$f" "$tag"; then
+    #local tag=$(get_build_tag $sourcefile)
+    if eval_build_tag $sourcefile "$f"; then
       if [[ $sourcefile == *.go ]]; then
         gofiles+=($sourcefile)
       elif [[ $sourcefile == *.s ]]; then
