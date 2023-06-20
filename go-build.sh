@@ -169,7 +169,6 @@ function eval_build_tag() {
     | sed -E "s/(boringcrypto|gccgo)/ false /g" \
     | sed -E "s/(${is_unix}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
-    | sed -E 's/goexperiment\.\w+/ false /g' \
     | sed -E "s/go1\.[0-9][0-9]?/${_TRUE_}/g" \
     | sed -E 's/[a-zA-Z0-9_\-\.]+/ false /g' \
     | sed -E "s/$_TRUE_/ true /g" \
