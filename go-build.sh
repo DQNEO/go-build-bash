@@ -152,19 +152,14 @@ function eval_build_tag() {
   # TODO: goVersion parsing is not correct.
   logical_expr=$(
     echo $tag \
-    | sed -E "s/(boringcrypto|gccgo)/false/g" \
+    | sed -E "s/(boringcrypto|gccgo)/ false /g" \
     | sed -E "s/(${is_unix}$GOOS|$GOARCH|gc)/$_TRUE_/g" \
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
-    | sed -E 's/goexperiment\.\w+/false/g' \
+    | sed -E 's/goexperiment\.\w+/ false /g' \
     | sed -E "s/go1\.[0-9][0-9]?/${_TRUE_}/g" \
-    | sed -E 's/[a-zA-Z0-9_\-\.]+/false/g' \
-    | sed -E "s/$_TRUE_/true/g" \
-    | sed -e 's/!true/false/g' \
-    | sed -e 's/!false/true/g' \
-    | sed -e 's/^true ||.*/true/' \
-    | sed -e 's/^true &&//g' \
-    | sed -e 's/^false ||//g' \
-    | sed -e 's/^false &&.*/false/g'
+    | sed -E 's/[a-zA-Z0-9_\-\.]+/ false /g' \
+    | sed -E "s/$_TRUE_/ true /g" \
+    | sed -e 's/!/! /g'
   )
   log "    $f: $logical_expr ($tag)"
   eval $logical_expr;
