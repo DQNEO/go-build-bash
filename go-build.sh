@@ -65,7 +65,6 @@ function parse_imports() {
   shift
   local -r absfiles="$@"
 
-  local -r tmpfile=$WORK/_source_nl_stripped.txt
   cat $absfiles | sed -E 's#//.+##g' | tr '\n' '~'  \
   | grep --only-matching --no-filename -E '~import\s*\([^\)]*\)|~import\s*[^"]*"[^"]+"' \
   | grep -E --only-matching '\"[^\"]+\"' | grep -v '"unsafe"' | tr -d '"' | sort | uniq
