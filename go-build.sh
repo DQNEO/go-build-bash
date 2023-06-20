@@ -127,7 +127,7 @@ function list_source_files_in_dir() {
   local -r allfiles=$(find $dir -maxdepth 1 -type f \( -name "*.go" -o -name "*.s" \) -printf "%f\n")
   local -ar ary=($allfiles)
   log "  allfiles: (${ary[@]})"
-  echo "$allfiles" | grep -v -E '_test\.go' | grep -v -E "_(${NON_GOOS_LIST})(\.|_)" | grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
+  echo "$allfiles" | grep -v -E '_test\.go$' | grep -v -E "_(${NON_GOOS_LIST})(\.|_)" | grep -v -E "_(${NON_GOARCH_LIST})\.(go|s)"
 }
 
 readonly _TRUE_="@@@"
