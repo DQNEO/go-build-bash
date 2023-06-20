@@ -66,15 +66,9 @@ function parse_imports() {
   local -r absfiles="$@"
 
   local -r tmpfile=$WORK/_source_nl_stripped.txt
-  cat $absfiles | sed -E 's#//.+##g' | tr '\n' '~' >$tmpfile
-
-  (
-    cat $tmpfile |
-      grep --only-matching --no-filename -E '~import\s*\([^\)]*\)'
-
-    cat $tmpfile |
-      grep --only-matching --no-filename -E '~import\s*[^"]*"[^"]+"'
-  ) | grep -E --only-matching '\"[^\"]+\"' | grep -v '"unsafe"' | tr -d '"' | sort | uniq
+  cat $absfiles | sed -E 's#//.+##g' | tr '\n' '~'  \
+  | grep --only-matching --no-filename -E '~import\s*\([^\)]*\)|~import\s*[^"]*"[^"]+"' \
+  | grep -E --only-matching '\"[^\"]+\"' | grep -v '"unsafe"' | tr -d '"' | sort | uniq
 }
 
 # Print dependency tree of packages
