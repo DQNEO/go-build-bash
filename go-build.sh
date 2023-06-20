@@ -233,7 +233,7 @@ function abspaths_to_basenames() {
   local paths="$@"
   local files=""
   for path in $paths; {
-    file=$(basename $path)
+    file=${path##*/}
     files="$files $file"
   }
   echo $files
@@ -448,7 +448,7 @@ function append_asm() {
   local obasenames=() # for logging
   local f
   for f in $files; {
-    local basename=$(basename $f)
+    local basename=${f##*/}
     local baseo=${basename%.s}.o
     local ofile=$wdir/$baseo
     log "  assembling: $basename => $baseo"
@@ -501,7 +501,7 @@ function build_pkg() {
     local file=$f
     if [[ $f == *.go ]]; then
       gofiles="$gofiles $file"
-      gobasenames+=($(basename $file))
+      gobasenames+=( ${file##*/} )
     elif [[ $f == *.s ]]; then
       asmfiles="$asmfiles $file"
     else
