@@ -199,8 +199,7 @@ function select_source_files() {
   local f
   for f in $files; {
     local sourcefile="$dir/$f"
-    #local tag=$(get_build_tag $sourcefile)
-    if eval_build_tag $sourcefile "$f"; then
+    if eval_build_tag $sourcefile $f; then
       if [[ $sourcefile == *.go ]]; then
         gofiles+=($sourcefile)
       elif [[ $sourcefile == *.s ]]; then
