@@ -65,7 +65,14 @@ function parse_imports() {
   shift
   local -r absfiles="$@"
 
-  cat $absfiles | sed -E 's#//.+##g' | tr '\n' '~'  \
+  local -a gofiles=()
+  for f in $absfiles; {
+    if [[ $f = *\.go ]]; then
+        gofiles+=($f)
+    fi
+  }
+
+  cat ${gofiles[@]} | sed -E 's#//.+##g' | tr '\n' '~'  \
   | grep --only-matching --no-filename -E '~import\s*\([^\)]*\)|~import\s*[^"]*"[^"]+"' \
   | grep -E --only-matching '\"[^\"]+\"' | grep -v '"unsafe"' | tr -d '"' | sort | uniq
 }
