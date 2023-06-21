@@ -171,8 +171,7 @@ function eval_build_tag() {
     | sed -E "s/goexperiment\.(coverageredesign|regabiwrappers|regabiargs|unified)/$_TRUE_/" \
     | sed -E "s/go1\.[0-9][0-9]?/${_TRUE_}/g" \
     | sed -E 's/[a-zA-Z0-9_\-\.]+/ false /g' \
-    | sed -E "s/$_TRUE_/ true /g" \
-    | sed -e 's/!/! /g'
+    | sed -E "s/$_TRUE_/ true /g"
   )
   log "    $f: $logical_expr ($tag)"
   eval $logical_expr;
